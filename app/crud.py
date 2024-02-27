@@ -55,7 +55,7 @@ def get_users(db: Session, skip: int = 0, limit: int = 10,is_active:bool = None)
     else:
         return db.query(models.User).filter(models.User.is_active == is_active).offset(skip).limit(limit).all()
 
-def get_user_by_email(db: Session, email: str, is_active:bool = None):
+def get_user_by_email(db: Session, email: str, is_active:bool = None): # type: ignore
     if is_active is None:
         return db.query(models.User).filter(models.User.email == email).first() # type: ignore
     else:
@@ -66,8 +66,7 @@ def get_user_by_id(db: Session, user_id: str):
 
 def update_user(db: Session, user_id: str, user: schemas.updateUser):
     db_user = db.query(models.User).filter(models.User.id == user_id).first() # type: ignore
-    for var, value in user.dict().items():
-        setattr(db_user, var, value) if value else None
+    db.query(models.User).filter(models.User.id == user_id).update(user.dict())
     try:
         db.commit()
         db.refresh(db_user)
@@ -78,8 +77,7 @@ def update_user(db: Session, user_id: str, user: schemas.updateUser):
 
 def update_user_by_super_admin(db: Session, user_id: str, user: schemas.updateUserBySuperAdmin):
     db_user = db.query(models.User).filter(models.User.id == user_id).first() # type: ignore
-    for var, value in user.dict().items():
-        setattr(db_user, var, value) if value else None
+    db.query(models.User).filter(models.User.id == user_id).update(user.dict())
     try:
         db.commit()
         db.refresh(db_user)
@@ -110,10 +108,13 @@ def get_station_by_id(db: Session, station_id: str):
 
 def update_station(db: Session, station_id: str, station: schemas.updateStation):
     db_station = db.query(models.Station).filter(models.Station.id == station_id).first() # type: ignore
-    for var, value in station.dict().items():
-        setattr(db_station, var, value) if value else None
-    db.commit()
-    db.refresh(db_station)
+    db.query(models.Station).filter(models.Station.id == station_id).update(station.dict())
+    try:
+        db.commit()
+        db.refresh(db_station)
+    except Exception as e:
+        print(e)
+        return None
     return db_station
 
 def create_station_admin(db: Session, station_admin: schemas.createStationAdmin):
@@ -181,8 +182,7 @@ def get_charging_session_by_station_id(db: Session, station_id: str):
 
 def update_charging_session(db: Session, charging_session_id: str, charging_session: schemas.updateChargingSession):
     db_charging_session = db.query(models.ChargingSession).filter(models.ChargingSession.id == charging_session_id).first()
-    for var, value in charging_session.dict().items():
-        setattr(db_charging_session, var, value) if value else None
+    db.query(models.ChargingSession).filter(models.ChargingSession.id == charging_session_id).update(charging_session.dict())
     try:
         db.commit()
         db.refresh(db_charging_session)
@@ -193,8 +193,7 @@ def update_charging_session(db: Session, charging_session_id: str, charging_sess
 
 def update_charging_session_by_station_id(db: Session, charging_session_id: str, charging_session: schemas.updateChargingSession):
     db_charging_session = db.query(models.ChargingSession).filter(models.ChargingSession.id == charging_session_id).first()
-    for var, value in charging_session.dict().items():
-        setattr(db_charging_session, var, value) if value else None
+    db.query(models.ChargingSession).filter(models.ChargingSession.id == charging_session_id).update(charging_session.dict())
     try:
         db.commit()
         db.refresh(db_charging_session)
