@@ -45,7 +45,6 @@ class updateUserBySuperAdmin(BaseModel):
     firstName: Optional[str]
     lastName: Optional[str]
     email: Optional[str]
-    balance: Optional[float]
     role: Optional[str]
 
 class updatePassword(BaseModel):

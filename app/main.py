@@ -84,11 +84,11 @@ async def read_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_d
     return crud.get_users(db, skip=skip, limit=limit)
 
 # update user by current user
-@app.put("/users", response_model=schemas.User)
+@app.put("/users", response_model=schemas.updateUser)
 async def update_user(user: schemas.updateUser, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
     return crud.update_user(db, current_user.id, user)
 
-@app.put("/users/{user_id}", response_model=schemas.User)
+@app.put("/users/{user_id}", response_model=schemas.updateUserBySuperAdmin)
 async def update_user_by_id(user_id: str, user: schemas.updateUserBySuperAdmin, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
     if current_user.role != "superadmin":
         raise HTTPException(status_code=401, detail="Unauthorized")
