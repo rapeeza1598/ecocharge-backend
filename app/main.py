@@ -76,6 +76,11 @@ async def register_user_by_superadmin(user: schemas.createUserBySuperAdmin, db: 
     crud.create_user_by_super_admin(db, user)
     return {"message": "User registered successfully"}
 
+# get user me
+@app.get("/users/me", response_model=schemas.User)
+async def read_users_me(db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
+    return current_user
+
 # Get All Users from DB response_model list of User and check access token
 @app.get("/users", response_model=list[schemas.User])
 async def read_users(skip: int = 0, limit: int = 10, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
