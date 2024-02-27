@@ -44,6 +44,7 @@ class updateUser(BaseModel):
 class updateUserBySuperAdmin(BaseModel):
     firstName: Optional[str]
     lastName: Optional[str]
+    phoneNumber: Optional[str]
     email: Optional[str]
     role: Optional[str]
 
