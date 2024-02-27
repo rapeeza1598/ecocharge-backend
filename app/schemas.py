@@ -40,19 +40,22 @@ class updateUser(BaseModel):
     firstName: Optional[str]
     lastName: Optional[str]
     phoneNumber: Optional[str]
-    password: Optional[str]
-    confirmPassword: Optional[str]
 
 class updateUserBySuperAdmin(BaseModel):
     firstName: Optional[str]
     lastName: Optional[str]
     email: Optional[str]
     balance: Optional[float]
-    phoneNumber: Optional[str]
-    password: Optional[str]
-    confirmPassword: Optional[str]
     role: Optional[str]
 
+class updatePassword(BaseModel):
+    oldPassword: str
+    password: str
+    confirmPassword: str
+
+class updatePasswordBySuperAdmin(BaseModel):
+    password: str
+    confirmPassword: str
 
 class Transaction(BaseModel):
     id: UUID

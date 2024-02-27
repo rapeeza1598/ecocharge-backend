@@ -17,22 +17,27 @@ def password_hash(password):
     return pwd_context.hash(password)
 
 def authenticate_user(db, email: str, password: str):
-    user = crud.get_user_by_email(db, email)
-    if not user:
+    if user := crud.get_user_by_email(db, email):
+        return user if verify_password(password, user.hashed_password) else False
+    else:
         return False
-    if not verify_password(password, user.hashed_password):
-        return False
-    return user
 
 def create_access_token(data: dict, expires_delta: datetime.timedelta = datetime.timedelta()):
     to_encode = data.copy()
     if expires_delta:
-        expire = datetime.datetime.utcnow() + expires_delta
+        expire = datetime.datetime.now(datetime.timezone.utc) + expires_delta
     else:
-        expire = datetime.datetime.utcnow() + datetime.timedelta(minutes=int(os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES'))) # type: ignore
-    to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, f"{os.getenv('SECRET_KEY')}", algorithm=f"{os.getenv('ALGORITHM')}")
-    return encoded_jwt
+        expire = datetime.datetime.now(
+            datetime.timezone.utc
+        ) + datetime.timedelta(
+            minutes=int(os.getenv('ACCESS_TOKEN_EXPIRE_MINUTES')) # type: ignore
+        )
+    to_encode["exp"] = expire
+    return jwt.encode(
+        to_encode,
+        f"{os.getenv('SECRET_KEY')}",
+        algorithm=f"{os.getenv('ALGORITHM')}",
+    )
 
 def get_current_user(db: Depends = Depends(crud.get_db), token: str = Depends(oauth2_scheme)): # type: ignore
     credentials_exception = HTTPException(
@@ -42,13 +47,13 @@ def get_current_user(db: Depends = Depends(crud.get_db), token: str = Depends(oa
     )
     try:
         payload = jwt.decode(token, f"{os.getenv('SECRET_KEY')}", algorithms=[f"{os.getenv('ALGORITHM')}"])
-        email: str = payload.get("sub")
+        email: str = payload.get("sub") # type: ignore
         if email is None:
             raise credentials_exception
         token_data = schemas.TokenData(email=email)
-    except JWTError:
-        raise credentials_exception
-    user = crud.get_user_by_email(db, email=token_data.email)
+    except JWTError as e:
+        raise credentials_exception from e
+    user = crud.get_user_by_email(db, email=token_data.email) # type: ignore
     if user is None:
         raise credentials_exception
     return user
