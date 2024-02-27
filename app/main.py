@@ -13,9 +13,12 @@ app = FastAPI()
 
 origins = [
     "http://localhost",
+    "http://localhost:3000",
     "http://localhost:8000",
     "https://example.com",
     "https://staging.example.com",
+    "ev-dashboard-ten.vercel.app",
+    "*",
 ]
 
 app.add_middleware(
@@ -103,6 +106,11 @@ async def topup_user_balance(user_id: str, amount: float, db: Session = Depends(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     amount_decimal = Decimal(amount)
+    # save transaction
+    transaction = schemas.createTransaction(userId=user_id,amount=amount_decimal,transactionType="topup",description="User balance topup")
+    db_transaction = crud.create_transaction(db, transaction)
+    if not db_transaction:
+        raise HTTPException(status_code=400, detail="Transaction not created")
     user.balance += amount_decimal
     db.commit()
     return {"message": "User balance updated successfully"}
@@ -201,3 +209,10 @@ async def get_station_power_used(station_id: str, db: Session = Depends(get_db),
         power_used += session.powerUsed
     return{"stationId":station_id,"powerUsed":power_used}
 
+# get all transactions
+@app.get("/transactions", response_model=list[schemas.Transaction])
+async def read_transactions(skip: int = 0, limit: int = 10, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
+    if current_user.role != "superadmin":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    transactions = crud.get_transactions(db, skip=skip, limit=limit)
+    return transactions

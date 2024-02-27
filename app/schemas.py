@@ -61,6 +61,12 @@ class Transaction(BaseModel):
     transactionType: str
     description: str
 
+class createTransaction(BaseModel):
+    userId: UUID
+    amount: float
+    transactionType: str
+    description: str
+
 class Station(BaseModel):
     id: UUID
     name: str
