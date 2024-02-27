@@ -47,6 +47,7 @@ class updateUserBySuperAdmin(BaseModel):
     phoneNumber: Optional[str]
     email: Optional[str]
     role: Optional[str]
+    is_active: Optional[bool]
 
 class updatePassword(BaseModel):
     oldPassword: str

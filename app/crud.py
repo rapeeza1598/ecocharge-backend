@@ -49,8 +49,9 @@ def create_user_by_super_admin(db: Session, user: schemas.createUserBySuperAdmin
         return None
     return db_user
 
-def get_users(db: Session, skip: int = 0, limit: int = 10):
-    return db.query(models.User).offset(skip).limit(limit).all()
+def get_users(db: Session, skip: int = 0, limit: int = 10,is_active:bool = True):
+    # get all users is_active = True
+    return db.query(models.User).filter(models.User.is_active == is_active).offset(skip).limit(limit).all()
 
 def get_user_by_email(db: Session, email: str):
     return db.query(models.User).filter(models.User.email == email).first()
