@@ -82,7 +82,7 @@ async def read_users_me(db: Session = Depends(get_db), current_user: schemas.Use
 
 # Get All Users from DB response_model list of User and check access token
 @app.get("/users", response_model=list[schemas.User])
-async def read_users(skip: int = 0, limit: int = 10,is_active: bool = True, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user,)):
+async def read_users(skip: int = 0, limit: int = 10,is_active: bool = None, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user,)): # type: ignore
     if current_user.role != "superadmin":
         raise HTTPException(status_code=401, detail="Unauthorized")
     return crud.get_users(db, skip=skip, limit=limit, is_active=is_active)
