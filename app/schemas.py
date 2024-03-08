@@ -75,15 +75,18 @@ class Station(BaseModel):
     id: UUID
     name: str
     location: List[float]
+    status: str
     created_at: datetime.datetime
 
 class createStation(BaseModel):
     name: str
     location: List[float] = [0.0, 0.0]
+    status: str = "online"
 
 class updateStation(BaseModel):
     name: Optional[str]
     location: Optional[List[float]]
+    status: Optional[str]
 
 class StationAdmin(BaseModel):
     id: UUID
