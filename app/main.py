@@ -134,9 +134,10 @@ async def update_user_password(password: schemas.updatePassword, db: Session = D
     user = crud.get_user_by_email(db,current_user.email)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    # check old password
+    if not security.verify_password(password.oldPassword, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Old password is incorrect")
     hash_pass = security.password_hash(password.password)
-    if user.hashed_password != hash_pass: # type: ignore
-        raise HTTPException(status_code=400,detail="Old Password Not Match")
     if password.password != password.confirmPassword:
         raise HTTPException(status_code=400, detail="Passwords do not match")
     user.hashed_password = hash_pass
