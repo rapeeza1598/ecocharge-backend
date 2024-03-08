@@ -129,18 +129,19 @@ async def disable_user(user_id: str, db: Session = Depends(get_db), current_user
     return {"message": "User disabled successfully"}
 
 # update user password
-@app.put("/users/password")
+@app.post("/users/password")
 async def update_user_password(password: schemas.updatePassword, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
-    user = crud.get_user_by_email(db, current_user.email)
+    user = crud.get_user_by_email(db,current_user.email)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    if not security.verify_password(password.oldPassword, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Old password is incorrect")
-    if password.password!=password.confirmPassword:
+    hash_pass = security.password_hash(password.password)
+    if user.hashed_password != hash_pass: # type: ignore
+        raise HTTPException(status_code=400,detail="Old Password Not Match")
+    if password.password != password.confirmPassword:
         raise HTTPException(status_code=400, detail="Passwords do not match")
-    user.hashed_password = security.password_hash(password.password)
+    user.hashed_password = hash_pass
     db.commit()
-    return {"message": "Password updated successfully"}
+    return {"message": "Password updated successfully"} 
 
 # update user password by superadmin
 @app.put("/users/{user_id}/password")
@@ -199,16 +200,19 @@ async def create_station_admin(station_id: str, user_id: str, db: Session = Depe
 
 # start charging session
 @app.post("/charging_sessions")
-async def start_charging_session(charging_session: schemas.ChargingSession, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
-    station = crud.get_station_by_id(db, charging_session.stationId)
-    if not station:
-        raise HTTPException(status_code=404, detail="Station not found")
+async def create_charging_session(charging_session: schemas.createChargingSession, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
     user = crud.get_user_by_id(db, charging_session.userId)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    if user.balance<0: # type: ignore
+    station = crud.get_station_by_id(db, charging_session.stationId)
+    if not station:
+        raise HTTPException(status_code=404, detail="Station not found")
+    if user.balance < 0:
         raise HTTPException(status_code=400, detail="Insufficient balance")
-    return crud.create_charging_session(db, charging_session)
+    db_charging_session = crud.create_charging_session(db, charging_session)
+    if not db_charging_session:
+        raise HTTPException(status_code=400, detail="Charging session not created")
+    return db_charging_session
 
 # update charging session by station id
 @app.put("/charging_sessions/{charging_session_id}/stations/{station_id}")

@@ -157,7 +157,7 @@ def get_transaction_by_id(db: Session, transaction_id: str):
 def get_transaction_by_station_id(db: Session, station_id: str):
     return db.query(models.Transaction).filter(models.Transaction.stationId == station_id).all()
 
-def create_charging_session(db: Session, charging_session: schemas.ChargingSession):
+def create_charging_session(db: Session, charging_session: schemas.createChargingSession):
     db_charging_session = models.ChargingSession(**charging_session.dict())
     try:
         db.add(db_charging_session)
@@ -207,6 +207,7 @@ def stop_charging_session(db: Session, charging_session_id: str, charging_sessio
     # status = "completed" if charging_session.status == "completed" else "stopped"
     setattr(db_charging_session, "status", "completed")
     setattr(db_charging_session, "endTime", charging_session.endTime)
+    setattr(db_charging_session, "powerUsed", charging_session.powerUsed)
     try:
         db.commit()
         db.refresh(db_charging_session)

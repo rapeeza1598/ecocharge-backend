@@ -110,17 +110,17 @@ class ChargingSession(BaseModel):
     status: str
 
 class createChargingSession(BaseModel):
-    userId: UUID
-    stationId: UUID
+    userId: str
+    stationId: str
     powerUsed: float
     startTime: datetime.datetime
     endTime: datetime.datetime
-    status: str
+    status: str = "active"
 
 class updateChargingSession(BaseModel):
     powerUsed: Optional[float]
-    endTime: Optional[datetime.datetime]
-    status: Optional[str]
+    endTime: Optional[datetime.datetime] = datetime.datetime.now()
+    status: Optional[str] = "completed"
 
 class TokenData(BaseModel):
     email: str | None = None
