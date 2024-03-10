@@ -192,6 +192,28 @@ async def create_station_admin(station_id: str, user_id: str, db: Session = Depe
     db_station_admin = crud.create_station_admin(db, station_admin)
     return {"message": "Station Admin created successfully"}
 
+# delete station by superadmin
+@app.delete("/stations/{station_id}",tags=["superadmin"])
+async def delete_station_by_superadmin(station_id: str, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
+    if current_user.role != "superadmin":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    station = crud.get_station_by_id(db, station_id)
+    if not station:
+        raise HTTPException(status_code=404, detail="Station not found")
+    crud.delete_station(db, station_id)
+    return {"message": "Station deleted successfully"}
+
+# delete station admin by superadmin
+@app.delete("/stations/{station_id}/admins/{user_id}",tags=["superadmin"])
+async def delete_station_admin_by_superadmin(station_id: str, user_id: str, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
+    if current_user.role != "superadmin":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    station_admin = crud.get_station_admin_by_id(db, user_id)
+    if not station_admin:
+        raise HTTPException(status_code=404, detail="Station Admin not found")
+    crud.delete_station_admin(db, user_id)
+    return {"message": "Station Admin deleted successfully"}
+
 # start charging session
 @app.post("/charging_sessions",tags=["charging"])
 async def create_charging_session(charging_session: schemas.createChargingSession, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):

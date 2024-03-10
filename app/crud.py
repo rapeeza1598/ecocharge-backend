@@ -134,6 +134,24 @@ def get_station_admins(db: Session, skip: int = 0, limit: int = 10):
 def get_station_admin_by_id(db: Session, station_admin_id: str):
     return db.query(models.StationAdmin).filter(models.StationAdmin.id == station_admin_id).first() # type: ignore
 
+def delete_station(db: Session, station_id: str):
+    db.query(models.Station).filter(models.Station.id == station_id).delete()
+    try:
+        db.commit()
+    except Exception as e:
+        print(e)
+        return None
+    return True
+
+def delete_station_admin(db: Session, station_admin_id: str):
+    db.query(models.StationAdmin).filter(models.StationAdmin.id == station_admin_id).delete()
+    try:
+        db.commit()
+    except Exception as e:
+        print(e)
+        return None
+    return True
+
 def create_transaction(db: Session, transaction: schemas.Transaction):
     db_transaction = models.Transaction(**transaction.dict())
     try:
