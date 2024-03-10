@@ -3,8 +3,9 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from app import crud, models, schemas,security
-from app.database import SessionLocal, engine
+from app.database import engine
 from decimal import Decimal
+from uuid import UUID
 
 models.Base.metadata.create_all(bind=engine)
 
@@ -28,14 +29,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Dependency to get DB Session
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 @app.get("/")
 def read_root():
     return {"message": "Hello World"}
@@ -45,16 +38,16 @@ def read_root():
 def read_db():
     return {"db_url": engine.url[5]}
 
-@app.post("/token")
-async def login_for_access_token(db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()):
+@app.post("/token",tags=["user"])
+async def login_for_access_token(db: Session = Depends(crud.get_db), form_data: OAuth2PasswordRequestForm = Depends()):
     user = security.authenticate_user(db, form_data.username, form_data.password)
     if user and security.verify_password(form_data.password, user.hashed_password):
         token = security.create_access_token(data={"sub": user.email})
         return {"access_token": token, "token_type": "bearer"}
     raise HTTPException(status_code=400, detail="Incorrect email or password")
 
-@app.post("/register")
-async def register_user(user: schemas.createUser, db: Session = Depends(get_db)):
+@app.post("/register",tags=["user"])
+async def register_user(user: schemas.createUser, db: Session = Depends(crud.get_db)):
     if crud.get_user_by_email(db, user.email):
         raise HTTPException(status_code=400, detail="Email already registered")
     if user.password!=user.confirmPassword:
@@ -63,8 +56,8 @@ async def register_user(user: schemas.createUser, db: Session = Depends(get_db))
     crud.create_user(db, user)
     return {"message": "User registered successfully"}
 
-@app.post("/register/by_superadmin")
-async def register_user_by_superadmin(user: schemas.createUserBySuperAdmin, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
+@app.post("/register/by_superadmin",tags=["superadmin"])
+async def register_user_by_superadmin(user: schemas.createUserBySuperAdmin, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
     if current_user.role != "superadmin":
         raise HTTPException(status_code=401, detail="Unauthorized")
     if crud.get_user_by_email(db, user.email):
@@ -76,31 +69,31 @@ async def register_user_by_superadmin(user: schemas.createUserBySuperAdmin, db: 
     return {"message": "User registered successfully"}
 
 # get user me
-@app.get("/users/me", response_model=schemas.User)
-async def read_users_me(db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
+@app.get("/users/me", response_model=schemas.User ,tags=["user"])
+async def read_users_me(db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
     return current_user
 
 # Get All Users from DB response_model list of User and check access token
-@app.get("/users", response_model=list[schemas.User])
-async def read_users(skip: int = 0, limit: int = 10,is_active: bool = None, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user,)): # type: ignore
+@app.get("/users", response_model=list[schemas.User],tags=["superadmin"])
+async def read_users(skip: int = 0, limit: int = 10,is_active: bool = None, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user,)): # type: ignore
     if current_user.role != "superadmin":
         raise HTTPException(status_code=401, detail="Unauthorized")
     return crud.get_users(db, skip=skip, limit=limit, is_active=is_active)
 
 # update user by current user
-@app.put("/users", response_model=schemas.updateUser)
-async def update_user(user: schemas.updateUser, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
-    return crud.update_user(db, current_user.id, user)
+@app.put("/users", response_model=schemas.updateUser, tags=["user"])
+async def update_user(user: schemas.updateUser, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
+    return crud.update_user(db, str(current_user.id), user)
 
-@app.put("/users/{user_id}", response_model=schemas.updateUserBySuperAdmin)
-async def update_user_by_id(user_id: str, user: schemas.updateUserBySuperAdmin, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
+@app.put("/users/{user_id}", response_model=schemas.updateUserBySuperAdmin, tags=["superadmin"])
+async def update_user_by_id(user_id: str, user: schemas.updateUserBySuperAdmin, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
     if current_user.role != "superadmin":
         raise HTTPException(status_code=401, detail="Unauthorized")
     return crud.update_user_by_super_admin(db, user_id, user)
 
 # user balance topup
-@app.put("/users/{user_id}/topup")
-async def topup_user_balance(user_id: str, amount: float, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
+@app.put("/users/{user_id}/topup",tags=["superadmin"])
+async def topup_user_balance(user_id: str, amount: float, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
     if current_user.role != "superadmin":
         raise HTTPException(status_code=401, detail="Unauthorized")
     user = crud.get_user_by_id(db, user_id)
@@ -108,7 +101,7 @@ async def topup_user_balance(user_id: str, amount: float, db: Session = Depends(
         raise HTTPException(status_code=404, detail="User not found")
     amount_decimal = Decimal(amount)
     # save transaction
-    transaction = schemas.createTransaction(userId=user_id,amount=amount_decimal,transactionType="topup",description="User balance topup")
+    transaction = schemas.createTransaction(userId=UUID(user_id), amount=float(amount_decimal), transactionType="topup", description="User balance topup")
     db_transaction = crud.create_transaction(db, transaction)
     if not db_transaction:
         raise HTTPException(status_code=400, detail="Transaction not created")
@@ -117,8 +110,8 @@ async def topup_user_balance(user_id: str, amount: float, db: Session = Depends(
     return {"message": "User balance updated successfully"}
 
 # delete user by id disabled
-@app.put("/users/{user_id}/disable")
-async def disable_user(user_id: str, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
+@app.put("/users/{user_id}/disable",tags=["superadmin"])
+async def disable_user(user_id: str, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
     if current_user.role != "superadmin":
         raise HTTPException(status_code=401, detail="Unauthorized")
     user = crud.get_user_by_id(db, user_id)
@@ -129,8 +122,8 @@ async def disable_user(user_id: str, db: Session = Depends(get_db), current_user
     return {"message": "User disabled successfully"}
 
 # update user password
-@app.post("/users/password")
-async def update_user_password(password: schemas.updatePassword, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
+@app.post("/users/password",tags=["user"])
+async def update_user_password(password: schemas.updatePassword, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
     user = crud.get_user_by_email(db,current_user.email)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -145,8 +138,8 @@ async def update_user_password(password: schemas.updatePassword, db: Session = D
     return {"message": "Password updated successfully"} 
 
 # update user password by superadmin
-@app.put("/users/{user_id}/password")
-async def update_user_password_by_superadmin(user_id: str, password: schemas.updatePasswordBySuperAdmin, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
+@app.put("/users/{user_id}/password",tags=["superadmin"])
+async def update_user_password_by_superadmin(user_id: str, password: schemas.updatePasswordBySuperAdmin, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
     if current_user.role != "superadmin":
         raise HTTPException(status_code=401, detail="Unauthorized")
     user = crud.get_user_by_id(db, user_id)
@@ -158,8 +151,8 @@ async def update_user_password_by_superadmin(user_id: str, password: schemas.upd
     db.commit()
     return {"message": "Password updated successfully"}
 
-@app.post("/stations", response_model=schemas.Station)
-async def create_station(station: schemas.createStation, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
+@app.post("/stations", response_model=schemas.Station, tags=["superadmin"])
+async def create_station(station: schemas.createStation, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
     if current_user.role != "superadmin":
         raise HTTPException(status_code=401, detail="Unauthorized")
     db_station = crud.create_station(db, station)
@@ -167,26 +160,26 @@ async def create_station(station: schemas.createStation, db: Session = Depends(g
         raise HTTPException(status_code=400, detail="Station not created")
     return db_station
 
-@app.get("/stations", response_model=list[schemas.Station])
-async def read_stations(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
+@app.get("/stations", response_model=list[schemas.Station], tags=["station"])
+async def read_stations(skip: int = 0, limit: int = 10, db: Session = Depends(crud.get_db)):
     return crud.get_stations(db, skip=skip, limit=limit)
 
-@app.get("/stations/{station_id}", response_model=schemas.Station)
-async def read_station_by_id(station_id: str, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
+@app.get("/stations/{station_id}", response_model=schemas.Station, tags=["station"])
+async def read_station_by_id(station_id: str, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
     if station := crud.get_station_by_id(db, station_id):
         return station
     else:
         raise HTTPException(status_code=404, detail="Station not found")
 
-@app.put("/stations/{station_id}", response_model=schemas.Station)
-async def update_station(station_id: str, station: schemas.updateStation, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
+@app.put("/stations/{station_id}", response_model=schemas.Station,tags=["superadmin"])
+async def update_station(station_id: str, station: schemas.updateStation, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
     if current_user.role != "superadmin":
         raise HTTPException(status_code=401, detail="Unauthorized")
     return crud.update_station(db, station_id, station)
 
 # set admin for station
-@app.put("/stations/{station_id}/admins/{user_id}")
-async def create_station_admin(station_id: str, user_id: str, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
+@app.put("/stations/{station_id}/admins/{user_id}",tags=["superadmin"])
+async def create_station_admin(station_id: str, user_id: str, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
     if current_user.role != "superadmin":
         raise HTTPException(status_code=401, detail="Unauthorized")
     station = crud.get_station_by_id(db, station_id)
@@ -200,8 +193,8 @@ async def create_station_admin(station_id: str, user_id: str, db: Session = Depe
     return {"message": "Station Admin created successfully"}
 
 # start charging session
-@app.post("/charging_sessions")
-async def create_charging_session(charging_session: schemas.createChargingSession, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
+@app.post("/charging_sessions",tags=["charging"])
+async def create_charging_session(charging_session: schemas.createChargingSession, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
     user = crud.get_user_by_id(db, charging_session.userId)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
@@ -216,8 +209,8 @@ async def create_charging_session(charging_session: schemas.createChargingSessio
     return db_charging_session
 
 # update charging session by station id
-@app.put("/charging_sessions/{charging_session_id}/stations/{station_id}")
-async def update_charging_session_by_station_id(charging_session_id: str, station_id: str, charging_session: schemas.updateChargingSession, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
+@app.put("/charging_sessions/{charging_session_id}/stations/{station_id}",tags=["superadmin"])
+async def update_charging_session_by_station_id(charging_session_id: str, station_id: str, charging_session: schemas.updateChargingSession, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
     if current_user.role != "superadmin":
         raise HTTPException(status_code=401, detail="Unauthorized")
     return crud.update_charging_session_by_station_id(
@@ -225,13 +218,13 @@ async def update_charging_session_by_station_id(charging_session_id: str, statio
     )
 
 # stop charging session
-@app.put("/charging_sessions/{charging_session_id}")
-async def stop_charging_session(charging_session_id: str, charging_session: schemas.updateChargingSession, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
+@app.put("/charging_sessions/{charging_session_id}",tags=["charging"])
+async def stop_charging_session(charging_session_id: str, charging_session: schemas.updateChargingSession, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
     return crud.stop_charging_session(db, charging_session_id, charging_session)
 
 # get and sum all power used by station id
-@app.get("/stations/{station_id}/power_used")
-async def get_station_power_used(station_id: str, db: Session = Depends(get_db),current_user: schemas.User = Depends(security.get_current_user)):
+@app.get("/stations/{station_id}/power_used",tags=["station"])
+async def get_station_power_used(station_id: str, db: Session = Depends(crud.get_db),current_user: schemas.User = Depends(security.get_current_user)):
     if current_user.role != "superadmin" or current_user.role != "stationadmin":
         raise HTTPException(status_code=401, detail="Not permitted to access this resource")
     charging_sessions = crud.get_charging_session_by_station_id(db, station_id)
@@ -241,8 +234,8 @@ async def get_station_power_used(station_id: str, db: Session = Depends(get_db),
     return{"stationId":station_id,"powerUsed":power_used}
 
 # get all transactions
-@app.get("/transactions", response_model=list[schemas.Transaction])
-async def read_transactions(skip: int = 0, limit: int = 10, db: Session = Depends(get_db), current_user: schemas.User = Depends(security.get_current_user)):
+@app.get("/transactions", response_model=list[schemas.Transaction],tags=["superadmin"])
+async def read_transactions(skip: int = 0, limit: int = 10, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
     if current_user.role != "superadmin":
         raise HTTPException(status_code=401, detail="Unauthorized")
     return crud.get_transactions(db, skip=skip, limit=limit)
