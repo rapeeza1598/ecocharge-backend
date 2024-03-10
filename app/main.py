@@ -155,10 +155,10 @@ async def update_user_password_by_superadmin(user_id: str, password: schemas.upd
 async def create_station(station: schemas.createStation, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
     if current_user.role != "superadmin":
         raise HTTPException(status_code=401, detail="Unauthorized")
-    db_station = crud.create_station(db, station)
-    if not db_station:
+    if db_station := crud.create_station(db, station):
+        return db_station
+    else:
         raise HTTPException(status_code=400, detail="Station not created")
-    return db_station
 
 @app.get("/stations", response_model=list[schemas.Station], tags=["station"])
 async def read_stations(skip: int = 0, limit: int = 10, db: Session = Depends(crud.get_db)):
@@ -225,10 +225,12 @@ async def create_charging_session(charging_session: schemas.createChargingSessio
         raise HTTPException(status_code=404, detail="Station not found")
     if user.balance < 0:
         raise HTTPException(status_code=400, detail="Insufficient balance")
-    db_charging_session = crud.create_charging_session(db, charging_session)
-    if not db_charging_session:
+    if db_charging_session := crud.create_charging_session(
+        db, charging_session
+    ):
+        return db_charging_session
+    else:
         raise HTTPException(status_code=400, detail="Charging session not created")
-    return db_charging_session
 
 # update charging session by station id
 @app.put("/charging_sessions/{charging_session_id}/stations/{station_id}",tags=["superadmin"])
@@ -247,12 +249,10 @@ async def stop_charging_session(charging_session_id: str, charging_session: sche
 # get and sum all power used by station id
 @app.get("/stations/{station_id}/power_used",tags=["station"])
 async def get_station_power_used(station_id: str, db: Session = Depends(crud.get_db),current_user: schemas.User = Depends(security.get_current_user)):
-    if current_user.role != "superadmin" or current_user.role != "stationadmin":
+    if current_user.role == "user":
         raise HTTPException(status_code=401, detail="Not permitted to access this resource")
     charging_sessions = crud.get_charging_session_by_station_id(db, station_id)
-    power_used = 0
-    for session in charging_sessions:
-        power_used += session.powerUsed
+    power_used = sum(session.powerUsed for session in charging_sessions)
     return{"stationId":station_id,"powerUsed":power_used}
 
 # get all transactions
@@ -261,3 +261,21 @@ async def read_transactions(skip: int = 0, limit: int = 10, db: Session = Depend
     if current_user.role != "superadmin":
         raise HTTPException(status_code=401, detail="Unauthorized")
     return crud.get_transactions(db, skip=skip, limit=limit)
+
+# get station admins
+@app.get("/stations/{station_id}/admins", response_model=list[schemas.User],tags=["superadmin"])
+async def read_station_admins(station_id: str, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
+    if current_user.role != "superadmin":
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    return crud.get_station_admins(db, station_id)
+
+@app.get("/stations/{station_id}/details", tags=["station"])
+async def read_station_details(station_id: str, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
+    if current_user.role == "user":
+        raise HTTPException(status_code=401, detail="Not permitted to access this resource")
+    station = crud.get_station_by_id(db, station_id)
+    if not station:
+        raise HTTPException(status_code=404, detail="Station not found")
+    charging_sessions = crud.get_charging_session_by_station_id(db, station_id)
+    power_used = sum(session.powerUsed for session in charging_sessions)
+    return {"station": station, "powerUsed": power_used}
