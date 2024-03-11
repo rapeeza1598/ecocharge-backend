@@ -210,13 +210,17 @@ async def delete_station_by_superadmin(station_id: str, db: Session = Depends(cr
 # delete station admin by superadmin
 @app.delete("/stations/{station_id}/admins/{user_id}",tags=["superadmin"])
 async def delete_station_admin_by_superadmin(station_id: str, user_id: str, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
-    if current_user.role != "superadmin":
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    station_admin = crud.get_station_admin_by_id(db, user_id)
-    if not station_admin:
-        raise HTTPException(status_code=404, detail="Station Admin not found")
-    crud.delete_station_admin(db, user_id)
-    return {"message": "Station Admin deleted successfully"}
+    try:
+        if current_user.role != "superadmin":
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        station_admin = crud.get_station_admin_by_id(db, user_id)
+        if not station_admin:
+            raise HTTPException(status_code=404, detail="Station Admin not found")
+        crud.delete_station_admin(db, user_id)
+        return {"message": "Station Admin deleted successfully"}
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=400, detail="Station Admin not deleted")
 
 # start charging session
 @app.post("/charging_sessions",tags=["charging"])
@@ -267,11 +271,14 @@ async def read_transactions(skip: int = 0, limit: int = 10, db: Session = Depend
     return crud.get_transactions(db, skip=skip, limit=limit)
 
 # get station admins
-@app.get("/stations/{station_id}/admins", response_model=list[schemas.User],tags=["superadmin"])
+@app.get("/stations/{station_id}/admins",tags=["superadmin"])
 async def read_station_admins(station_id: str, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
-    if current_user.role == "user":
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    return crud.get_station_admins(db, station_id)
+    try:
+        if current_user.role != "superadmin":
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        return crud.get_station_admins(db, station_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Station Admins not found") from e
 
 @app.get("/stations/{station_id}/details", tags=["station"])
 async def read_station_details(station_id: str, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
@@ -284,10 +291,11 @@ async def read_station_details(station_id: str, db: Session = Depends(crud.get_d
     power_used = sum(session.powerUsed for session in charging_sessions)
     return {"station": station, "powerUsed": power_used}
 
-@app.websocket("/ws{charging_session_id}")
+@app.websocket("/ws/{charging_session_id}")
 async def websocket_endpoint(websocket: WebSocket, charging_session_id: str):
     await websocket.accept()
     while True:
         data = await websocket.receive_text()
         await websocket.send_text(f"Message text was: {data}")
     await websocket.close()
+    # await websocket.send_text(f"Session ID: {charging_session_id}")

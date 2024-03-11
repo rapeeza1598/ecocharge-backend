@@ -128,12 +128,12 @@ def create_station_admin(db: Session, station_admin: schemas.createStationAdmin)
         return None
     return db_station_admin
 
-def get_station_admins(db: Session,station_id: str = None, skip: int = 0, limit: int = 10): # type: ignore
+def get_station_admins(db: Session,station_id: str = None): # type: ignore
     if station_id is None:
-        return db.query(models.StationAdmin).offset(skip).limit(limit).all()
+        return db.query(models.StationAdmin).all()
     else:
-        return db.query(models.StationAdmin).filter(models.StationAdmin.stationId == station_id).offset(skip).limit(limit).all()
-
+        return db.query(models.StationAdmin).filter(models.StationAdmin.stationId == station_id).all()
+    
 def get_station_admin_by_id(db: Session, station_admin_id: str):
     return db.query(models.StationAdmin).filter(models.StationAdmin.id == station_admin_id).first() # type: ignore
 

@@ -67,7 +67,7 @@ class StationAdmin(Base):
     __tablename__ = "station_admins"
 
     id = Column(String, primary_key=True, index=True)
-    userId = Column(String,ForeignKey('users.id'))
+    userId = Column(String,ForeignKey('users.id'),unique=True, index=True)
     stationId = Column(String,ForeignKey('stations.id'))
     created_at = Column(DateTime, default=datetime.datetime.now())
 
