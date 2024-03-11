@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, WebSocket
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
@@ -195,13 +195,17 @@ async def create_station_admin(station_id: str, user_id: str, db: Session = Depe
 # delete station by superadmin
 @app.delete("/stations/{station_id}",tags=["superadmin"])
 async def delete_station_by_superadmin(station_id: str, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
-    if current_user.role != "superadmin":
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    station = crud.get_station_by_id(db, station_id)
-    if not station:
-        raise HTTPException(status_code=404, detail="Station not found")
-    crud.delete_station(db, station_id)
-    return {"message": "Station deleted successfully"}
+    try:
+        if current_user.role != "superadmin":
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        station = crud.get_station_by_id(db, station_id)
+        if not station:
+            raise HTTPException(status_code=404, detail="Station not found")
+        crud.delete_station(db, station_id)
+        return {"message": "Station deleted successfully"}
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=400, detail="Station not deleted")
 
 # delete station admin by superadmin
 @app.delete("/stations/{station_id}/admins/{user_id}",tags=["superadmin"])
@@ -265,7 +269,7 @@ async def read_transactions(skip: int = 0, limit: int = 10, db: Session = Depend
 # get station admins
 @app.get("/stations/{station_id}/admins", response_model=list[schemas.User],tags=["superadmin"])
 async def read_station_admins(station_id: str, db: Session = Depends(crud.get_db), current_user: schemas.User = Depends(security.get_current_user)):
-    if current_user.role != "superadmin":
+    if current_user.role == "user":
         raise HTTPException(status_code=401, detail="Unauthorized")
     return crud.get_station_admins(db, station_id)
 
@@ -279,3 +283,11 @@ async def read_station_details(station_id: str, db: Session = Depends(crud.get_d
     charging_sessions = crud.get_charging_session_by_station_id(db, station_id)
     power_used = sum(session.powerUsed for session in charging_sessions)
     return {"station": station, "powerUsed": power_used}
+
+@app.websocket("/ws{charging_session_id}")
+async def websocket_endpoint(websocket: WebSocket, charging_session_id: str):
+    await websocket.accept()
+    while True:
+        data = await websocket.receive_text()
+        await websocket.send_text(f"Message text was: {data}")
+    await websocket.close()
