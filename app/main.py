@@ -2,12 +2,7 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from app.core.security import (
-    authenticate_user,
-    create_access_token,
-    password_hash,
-    verify_password,
-)
+from app.core import security 
 from app.crud.user import create_user, get_user_by_email
 from app.database import Base, engine, get_db
 from app.models import (
@@ -77,9 +72,9 @@ def read_db():
 async def login_for_access_token(
     db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ):
-    user = authenticate_user(db, form_data.username, form_data.password)
-    if user and verify_password(form_data.password, user.hashed_password):
-        token = create_access_token(data={"sub": user.email})
+    user = security.authenticate_user(db, form_data.username, form_data.password)
+    if user and security.verify_password(form_data.password, user.hashed_password):
+        token = security.create_access_token(data={"sub": user.email})
         return {"access_token": token, "token_type": "bearer"}
     raise HTTPException(status_code=400, detail="Incorrect email or password")
 
@@ -90,7 +85,7 @@ async def register_user(user: createUser, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail="Email already registered")
     if user.password != user.confirmPassword:
         raise HTTPException(status_code=400, detail="Passwords do not match")
-    user.password = password_hash(user.password)
+    user.password = security.password_hash(user.password)
     create_user(db, user)
     return {"message": "User registered successfully"}
 

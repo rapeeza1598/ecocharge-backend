@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 import os
 
 # Clear the environment variables (note: ensure this is really needed as it removes all environment variables)
-os.environ.clear()
+# os.environ.clear()
 
 # Load the environment variables from the .env file
 load_dotenv()
