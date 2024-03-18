@@ -144,8 +144,8 @@ def change_password_current_user(db: Session, user_id: str, password: str):
     db_user = db.query(User).filter(User.id == user_id).first()  # type: ignore
     if db_user is not None:
         try:
-            if not security.verify_password(db_user.hashed_password, password):
-                return None
+            if not security.verify_password(password, db_user.hashed_password):
+                return None    
             pass_hash = security.password_hash(password)
             db.query(User).filter(User.id == user_id).update({User.hashed_password: pass_hash})  # type: ignore
             db.commit()

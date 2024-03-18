@@ -53,7 +53,7 @@ class updateUserBySuperAdmin(BaseModel):
 class changePassword(BaseModel):
     oldPassword: str
     password: str
-    confirmPassword: str
+    confirm_password: str
 
 class changePasswordBySuperAdmin(BaseModel):
     password: str
