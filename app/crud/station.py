@@ -27,8 +27,9 @@ def get_station_by_id(db: Session, station_id: str):
 
 
 def update_station(db: Session, station_id: str, station: updateStation):
-    db_station = db.query(models.Station).filter(models.Station.id == station_id).first()  # type: ignore
-    db.query(models.Station).filter(models.Station.id == station_id).update(station)  # type: ignore
+    db_station: Station | None = db.query(Station).filter(Station.id == station_id).first()  # type: ignore
+    setattr(db_station, "name", station.name)
+    setattr(db_station, "location", station.location)
     try:
         db.commit()
         db.refresh(db_station)
@@ -50,16 +51,8 @@ def create_station_admin(db: Session, station_admin: createStationAdmin):
     return db_station_admin
 
 
-def get_station_admins(db: Session, station_id: str = None):  # type: ignore
-    if station_id is None:
-        return db.query(StationAdmin).all()
-    else:
-        return (
-            db.query(StationAdmin)
-            .filter(StationAdmin.stationId == station_id)  # type: ignore
-            .join(User, StationAdmin.userId == User.id)  # type: ignore
-            .all()
-        )
+def get_station_admins(db: Session, station_id: str):
+    return db.query(StationAdmin).filter(StationAdmin.stationId == station_id).all() # type: ignore
 
 
 def get_station_admin_by_id(db: Session, station_admin_id: str):

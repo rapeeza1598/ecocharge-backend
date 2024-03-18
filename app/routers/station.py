@@ -47,13 +47,16 @@ async def read_station_by_id(
 @router.put("/{station_id}", response_model=Station)
 async def update_station(
     station_id: str,
-    station: updateStation,
+    station_update: updateStation,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    return update_station(db, station_id, station) # type: ignore
+    if db_station := station.update_station(db, station_id, station_update):
+        return db_station
+    else:
+        raise HTTPException(status_code=400, detail="Station not updated")
 
 @router.delete("/{station_id}")
 async def delete_station_by_superadmin(
@@ -106,7 +109,7 @@ async def read_station_details(
         "powerUsed": power_used,
     }
 
-@router.get("/{station_id}/admins", response_model=List[StationAdmin])
+@router.get("/{station_id}/admins")
 async def read_station_admins(
     station_id: str,
     db: Session = Depends(get_db),

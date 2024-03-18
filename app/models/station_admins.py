@@ -12,8 +12,8 @@ class StationAdmin(Base):
     stationId = Column(String, ForeignKey("stations.id"))
     created_at = Column(DateTime, default=datetime.datetime.now())
 
-    def __init__(self, userId, stationId):
+    def __init__(self, user_id, stationId):
         self.id = str(uuid.uuid4())
-        self.userId = userId
+        self.user_id = user_id
         self.stationId = stationId
         self.created_at = datetime.datetime.now()

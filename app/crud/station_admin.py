@@ -1,18 +1,18 @@
 from sqlalchemy.orm import Session
 from app.models.station_admins import StationAdmin
+from app.crud import station, user
 from sqlalchemy import and_
 def add_admin_station(db: Session, station_id: str, admin_id: str):
     try:
-        admin_in_station = get_admin_station_by_station_id(db, station_id)
-        if admin_in_station is not None:  # Check if admin_in_station is not None
-            for admin in admin_in_station:
-                if str(admin.userId) == admin_id:  # Cast admin.userId to string before comparing
-                    return None
-        new_admin_station = StationAdmin(stationId=station_id, userId=admin_id)
-        db.add(new_admin_station)
+        if not station.get_station_by_id(db, station_id):
+            return False
+        if not user.get_user_by_id(db, admin_id):
+            return False
+        db_station_admin = StationAdmin(stationId=station_id, user_id=admin_id)
+        db.add(db_station_admin)
         db.commit()
-        db.refresh(new_admin_station)
-        return new_admin_station
+        db.refresh(db_station_admin)
+        return db_station_admin
     except Exception as e:
         print(e)
         return None
