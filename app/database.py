@@ -1,6 +1,5 @@
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 import os
 
@@ -23,7 +22,6 @@ POSTGRES_PASSWORD = get_env_var('POSTGRES_PASSWORD')
 POSTGRES_SERVER = get_env_var('POSTGRES_SERVER')
 POSTGRES_PORT = get_env_var('POSTGRES_PORT')
 POSTGRES_DB = get_env_var('POSTGRES_DB')
-
 try:
     POSTGRES_PORT_INT = int(POSTGRES_PORT)  # Ensure POSTGRES_PORT is an integer
 except ValueError:

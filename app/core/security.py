@@ -3,7 +3,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from passlib.context import CryptContext
 from jose import JWTError, jwt
-from app.database import get_db
+from app import database
 from app.schemas.user import TokenData
 import os
 from app.crud.user import get_user_by_email
@@ -41,7 +41,7 @@ def create_access_token(data: dict, expires_delta: datetime.timedelta = datetime
         algorithm=f"{os.getenv('ALGORITHM')}",
     )
 
-def get_current_user(db = Depends(get_db), token: str = Depends(oauth2_scheme)):
+def get_current_user(db = Depends(database.get_db), token: str = Depends(oauth2_scheme)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
