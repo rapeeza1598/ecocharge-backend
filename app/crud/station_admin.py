@@ -26,9 +26,13 @@ def get_admin_station_by_station_id(db: Session, station_id: str):
         return None
 
 def update_admin_station(db: Session, station_id: str, admin_id: str):
-    db.query(StationAdmin).filter(StationAdmin.stationId == station_id).update({"userId": admin_id}) # type: ignore
-    db.commit()
-    return db.query(StationAdmin).filter(StationAdmin.stationId == station_id).first() # type: ignore
+    try:
+        db.query(StationAdmin).filter(StationAdmin.stationId == station_id).update({"userId": admin_id}) # type: ignore
+        db.commit()
+        return db.query(StationAdmin).filter(StationAdmin.stationId == station_id).first() # type: ignore
+    except Exception as e:
+        print(e)
+        return None
 
 def delete_admin_station(db: Session, station_id: str, admin_id: str):
     try:

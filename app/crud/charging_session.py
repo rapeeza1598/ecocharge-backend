@@ -56,9 +56,9 @@ def update_charging_session(
         .filter(ChargingSession.id == charging_session_id) # type: ignore
         .first()
     )
-    db.query(ChargingSession).filter(
-        ChargingSession.id == charging_session_id # type: ignore
-    ).update(charging_session) # type: ignore
+    setattr(db_charging_session, "status", charging_session.status)
+    setattr(db_charging_session, "endTime", charging_session.endTime)
+    setattr(db_charging_session, "powerUsed", charging_session.powerUsed)
     try:
         db.commit()
         db.refresh(db_charging_session)
@@ -78,9 +78,9 @@ def update_charging_session_by_station_id(
         .filter(ChargingSession.id == charging_session_id) # type: ignore
         .first()
     )
-    db.query(ChargingSession).filter(
-        ChargingSession.id == charging_session_id # type: ignore
-    ).update(charging_session) # type: ignore
+    setattr(db_charging_session, "status", charging_session.status)
+    setattr(db_charging_session, "endTime", charging_session.endTime)
+    setattr(db_charging_session, "powerUsed", charging_session.powerUsed)
     try:
         db.commit()
         db.refresh(db_charging_session)

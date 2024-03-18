@@ -73,7 +73,9 @@ def get_user_by_id(db: Session, user_id: str):
 
 def update_user(db: Session, user_id: str, user: updateUser):
     db_user = db.query(User).filter(User.id == user_id).first()  # type: ignore
-    db.query(User).filter(User.id == user_id).update(user)  # type: ignore
+    setattr(db_user, "firstName", user.firstName)
+    setattr(db_user, "lastName", user.lastName)
+    setattr(db_user, "phoneNumber", user.phoneNumber)
     try:
         db.commit()
         db.refresh(db_user)
@@ -85,7 +87,11 @@ def update_user(db: Session, user_id: str, user: updateUser):
 
 def update_user_by_super_admin(db: Session, user_id: str, user: updateUserBySuperAdmin):
     db_user = db.query(User).filter(User.id == user_id).first()  # type: ignore
-    db.query(User).filter(User.id == user_id).update(user)  # type: ignore
+    setattr(db_user, "firstName", user.firstName)
+    setattr(db_user, "lastName", user.lastName)
+    setattr(db_user, "phoneNumber", user.phoneNumber)
+    setattr(db_user, "role", user.role)
+    setattr(db_user, "is_active", user.is_active)
     try:
         db.commit()
         db.refresh(db_user)
