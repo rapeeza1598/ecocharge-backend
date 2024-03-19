@@ -39,18 +39,15 @@ async def change_password(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    try:
-        # check matching passwords
-        if new_password.password != new_password.confirm_password:
-            raise HTTPException(status_code=400, detail="Password not matching")
-        # check old password
-        if not change_password_current_user(db, str(current_user.id), new_password.oldPassword):
-            raise HTTPException(status_code=400, detail="Old Password not matching")
-        # update password
-        change_password_current_user(db, str(current_user.id), new_password.password)
-        return {"message": "Password updated successfully"}
-    except Exception as e:
-        raise HTTPException(status_code=400, detail="Password not updated") from e
+    # check old password
+    if not change_password_current_user(db, str(current_user.id), new_password.oldPassword):
+       raise HTTPException(status_code=400, detail="Old Password not matching")
+    # check matching passwords
+    if new_password.password != new_password.confirm_password:
+        raise HTTPException(status_code=400, detail="Password not matching")
+    # update password
+    change_password_current_user(db, str(current_user.id), new_password.password)
+    return {"message": "Password updated successfully"}
     
 @router.put("/me")
 async def update_current_user(

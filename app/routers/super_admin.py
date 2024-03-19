@@ -34,7 +34,7 @@ async def register_user_by_super_admin(
     create_user_by_super_admin(db, user)
     return {"message": "User registered successfully"}
 
-@router.get("/users")
+@router.get("/users",response_model=List[User])
 async def read_users(
     skip: int = 0,
     limit: int = 10,

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.security import get_current_user
+from app.crud import station
 from app.crud.station_admin import add_admin_station, delete_admin_station
 from app.database import get_db
 from app.schemas.user import User
@@ -13,8 +14,17 @@ router = APIRouter(
 )
 
 @router.get("/")
-async def read_station_admins():
-    return {"message": "Read station admins"}
+async def read_station_admins(
+    station_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        if current_user.role not in ["superadmin", "stationadmin"]:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        return station.get_station_admins(db, station_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Station Admins not found") from e
 
 @router.post("/{station_id}/admins/{user_id}")
 async def create_station_admin(
