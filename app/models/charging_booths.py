@@ -8,7 +8,7 @@ class ChargingBooth(Base):
     __tablename__ = "charging_booth"
 
     booth_id = Column(String, primary_key=True, index=True)
-    booth_name = Column(String, default="Charging Booth")
+    booth_name = Column(String,unique=True, default="Charging Booth")
     station_id = Column(String, ForeignKey("stations.id"))
     status = Column(String, default="offline")
     charging_rate = Column(DECIMAL, default=0.00)
