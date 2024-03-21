@@ -131,7 +131,7 @@ def update_user_password(db: Session, user_id: str, password: str):
     db_user = db.query(User).filter(User.id == user_id).first()  # type: ignore
     if db_user is not None:
         try:
-            db.query(User).filter(User.id == user_id).update({User.hashed_password: password})  # type: ignore
+            setattr(db_user, "hashed_password", security.password_hash(password))
             db.commit()
             db.refresh(db_user)
         except Exception as e:
@@ -140,16 +140,13 @@ def update_user_password(db: Session, user_id: str, password: str):
     return db_user
 
 
-def change_password_current_user(db: Session, user_id: str, password: str):
+def check_password_current_user(db: Session, user_id: str, password: str):
     db_user = db.query(User).filter(User.id == user_id).first()  # type: ignore
     if db_user is not None:
         try:
             if not security.verify_password(password, db_user.hashed_password):
                 return None    
-            pass_hash = security.password_hash(password)
-            db.query(User).filter(User.id == user_id).update({User.hashed_password: pass_hash})  # type: ignore
-            db.commit()
-            db.refresh(db_user)
+            return True
         except Exception as e:
             print(e)
             return None
