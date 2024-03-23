@@ -1,9 +1,15 @@
 from app.models.transactions import Transaction
 from sqlalchemy.orm import Session
+from app.schemas.transaction import createTransaction
 
 
-def create_transaction(db: Session, transaction: Transaction):
-    db_transaction = Transaction(**transaction.dict())
+def create_transaction(db: Session, user_id: str, amount: float, transaction_type: str, description: str):
+    db_transaction = Transaction(
+        userId=user_id,
+        amount=amount,
+        transactionType=transaction_type,
+        description=description,
+    )
     try:
         db.add(db_transaction)
         db.commit()

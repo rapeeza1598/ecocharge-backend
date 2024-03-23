@@ -11,7 +11,7 @@ class Transaction(BaseModel):
     description: str
 
 class createTransaction(BaseModel):
-    userId: UUID
+    userId: str
     amount: float
     transactionType: str
     description: str

@@ -22,6 +22,7 @@ from app.routers import (
     charging_session,
     charging_booth,
     station_admin,
+    topup,
 )
 
 
@@ -97,3 +98,4 @@ app.include_router(station_admin.router)
 app.include_router(charging_booth.router)
 app.include_router(transaction.router)
 app.include_router(charging_session.router)
+app.include_router(topup.router)

@@ -101,11 +101,11 @@ def update_user_by_super_admin(db: Session, user_id: str, user: updateUserBySupe
     return db_user
 
 
-def update_user_balance(db: Session, user_id: str, amount: float):
+def update_user_balance(db: Session,user_id: str, amount: float):
     db_user = db.query(User).filter(User.id == user_id).first()  # type: ignore
     if db_user is not None:
         try:
-            db.query(User).filter(User.id == user_id).update({User.balance: User.balance + amount})  # type: ignore
+            setattr(db_user, "balance", db_user.balance + amount)
             db.commit()
             db.refresh(db_user)
         except Exception as e:
@@ -151,3 +151,4 @@ def check_password_current_user(db: Session, user_id: str, password: str):
             print(e)
             return None
     return db_user
+    
