@@ -3,7 +3,9 @@ from sqlalchemy.orm import Session
 from app.schemas.transaction import createTransaction
 
 
-def create_transaction(db: Session, user_id: str, amount: float, transaction_type: str, description: str):
+def create_transaction(
+    db: Session, user_id: str, amount: float, transaction_type: str, description: str
+):
     db_transaction = Transaction(
         userId=user_id,
         amount=amount,
@@ -33,8 +35,4 @@ def get_transaction_by_id(db: Session, transaction_id: str):
 
 
 def get_transaction_by_station_id(db: Session, station_id: str):
-    return (
-        db.query(Transaction)
-        .filter(Transaction.stationId == station_id)
-        .all()
-    )
+    return db.query(Transaction).filter(Transaction.stationId == station_id).all()

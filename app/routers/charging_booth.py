@@ -22,7 +22,8 @@ async def read_charging_booths():
 
 @router.get("/{station_id}", response_model=List[ChargingBooth])
 async def read_charging_booth_in_station(
-    station_id: str, db: Session = Depends(get_db),
+    station_id: str,
+    db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     if current_user.role not in ["superadmin", "stationadmin"]:
@@ -46,6 +47,7 @@ async def create_charging_booth(
     else:
         raise HTTPException(status_code=400, detail="Charging Booth not added")
 
+
 @router.put("/{booth_id}/status")
 async def update_charging_booth_status(
     booth_id: str,
@@ -59,7 +61,8 @@ async def update_charging_booth_status(
         return {"message": "Charging Booth status updated successfully"}
     else:
         raise HTTPException(status_code=400, detail="Charging Booth status not updated")
-    
+
+
 @router.put("/{booth_id}/rate")
 async def update_charging_booth_rate(
     booth_id: str,
@@ -73,7 +76,8 @@ async def update_charging_booth_rate(
         return {"message": "Charging Booth rate updated successfully"}
     else:
         raise HTTPException(status_code=400, detail="Charging Booth rate not updated")
-    
+
+
 @router.put("/{booth_id}")
 async def update_charging_booth(
     booth_id: str,
@@ -88,7 +92,8 @@ async def update_charging_booth(
         return {"message": "Charging Booth updated successfully"}
     else:
         raise HTTPException(status_code=400, detail="Charging Booth not updated")
-    
+
+
 @router.delete("/{booth_id}")
 async def delete_charging_booth(
     booth_id: str,

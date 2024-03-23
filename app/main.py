@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from app.core import security 
+from app.core import security
 from app.crud.user import create_user, get_user_by_email
 from app.database import Base, engine, get_db
 from app.models import (

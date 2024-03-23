@@ -16,9 +16,11 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
+
 @router.get("/", response_model=list[Station])
 async def read_stations(skip: int = 0, limit: int = 10, db: Session = Depends(get_db)):
     return station.get_stations(db, skip=skip, limit=limit)
+
 
 @router.post("/", response_model=Station)
 async def create_new_station(
@@ -32,7 +34,8 @@ async def create_new_station(
         return db_station
     else:
         raise HTTPException(status_code=400, detail="Station not created")
-    
+
+
 @router.get("/{station_id}", response_model=Station)
 async def read_station_by_id(
     station_id: str,
@@ -43,7 +46,8 @@ async def read_station_by_id(
         return stations
     else:
         raise HTTPException(status_code=404, detail="Station not found")
-    
+
+
 @router.put("/{station_id}", response_model=Station)
 async def update_station(
     station_id: str,
@@ -57,6 +61,7 @@ async def update_station(
         return db_station
     else:
         raise HTTPException(status_code=400, detail="Station not updated")
+
 
 @router.delete("/{station_id}")
 async def delete_station_by_superadmin(
@@ -75,6 +80,7 @@ async def delete_station_by_superadmin(
         print(e)
         raise HTTPException(status_code=400, detail="Station not deleted") from e
 
+
 @router.get("/{station_id}/power_used")
 async def get_station_power_used(
     station_id: str,
@@ -88,6 +94,7 @@ async def get_station_power_used(
     charging_sessions = get_charging_session_by_station_id(db, station_id)
     power_used = sum(session.powerUsed for session in charging_sessions)
     return {"stationId": station_id, "powerUsed": power_used}
+
 
 @router.get("/{station_id}/details")
 async def read_station_details(
@@ -108,6 +115,7 @@ async def read_station_details(
         "chargingSessions": charging_sessions,
         "powerUsed": power_used,
     }
+
 
 @router.get("/{station_id}/admins")
 async def read_station_admins(

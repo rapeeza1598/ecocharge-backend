@@ -52,7 +52,7 @@ def create_station_admin(db: Session, station_admin: createStationAdmin):
 
 
 def get_station_admins(db: Session, station_id: str):
-    return db.query(StationAdmin).filter(StationAdmin.stationId == station_id).all() # type: ignore
+    return db.query(StationAdmin).filter(StationAdmin.stationId == station_id).all()  # type: ignore
 
 
 def get_station_admin_by_id(db: Session, station_admin_id: str):
@@ -81,7 +81,5 @@ def delete_station_admin(db: Session, station_admin_user: str):
 
 def get_station_power_used_by_station_id(db: Session, station_id: str):
     return (
-        db.query(ChargingSession)
-        .filter(ChargingSession.station_id == station_id)
-        .all()
+        db.query(ChargingSession).filter(ChargingSession.station_id == station_id).all()
     )

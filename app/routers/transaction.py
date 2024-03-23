@@ -13,6 +13,7 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
+
 @router.get("/", response_model=list[Transaction])
 async def read_transactions(
     skip: int = 0,
@@ -23,6 +24,7 @@ async def read_transactions(
     if current_user.role not in ["superadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
     return get_transactions(db, skip=skip, limit=limit)
+
 
 @router.get("/{user_id}", response_model=list[Transaction])
 async def read_transactions_by_user_id(

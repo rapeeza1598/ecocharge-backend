@@ -4,9 +4,7 @@ from app.models.charging_sessions import ChargingSession
 from app.schemas.charging_session import createChargingSession, updateChargingSession
 
 
-def create_charging_session(
-    db: Session, charging_session: createChargingSession
-):
+def create_charging_session(db: Session, charging_session: createChargingSession):
     db_charging_session = ChargingSession(**charging_session.dict())
     try:
         db.add(db_charging_session)
@@ -25,7 +23,7 @@ def get_charging_sessions(db: Session, skip: int = 0, limit: int = 10):
 def get_charging_session_by_user_id(db: Session, user_id: str):
     return (
         db.query(ChargingSession)
-        .filter(ChargingSession.userId == user_id) # type: ignore
+        .filter(ChargingSession.userId == user_id)  # type: ignore
         .all()
     )
 
@@ -33,7 +31,7 @@ def get_charging_session_by_user_id(db: Session, user_id: str):
 def get_charging_session_by_id(db: Session, charging_session_id: str):
     return (
         db.query(ChargingSession)
-        .filter(ChargingSession.id == charging_session_id) # type: ignore
+        .filter(ChargingSession.id == charging_session_id)  # type: ignore
         .first()
     )
 
@@ -41,7 +39,7 @@ def get_charging_session_by_id(db: Session, charging_session_id: str):
 def get_charging_session_by_station_id(db: Session, station_id: str):
     return (
         db.query(ChargingSession)
-        .filter(ChargingSession.stationId == station_id) # type: ignore
+        .filter(ChargingSession.stationId == station_id)  # type: ignore
         .all()
     )
 
@@ -53,7 +51,7 @@ def update_charging_session(
 ):
     db_charging_session = (
         db.query(ChargingSession)
-        .filter(ChargingSession.id == charging_session_id) # type: ignore
+        .filter(ChargingSession.id == charging_session_id)  # type: ignore
         .first()
     )
     setattr(db_charging_session, "status", charging_session.status)
@@ -75,7 +73,7 @@ def update_charging_session_by_station_id(
 ):
     db_charging_session = (
         db.query(ChargingSession)
-        .filter(ChargingSession.id == charging_session_id) # type: ignore
+        .filter(ChargingSession.id == charging_session_id)  # type: ignore
         .first()
     )
     setattr(db_charging_session, "status", charging_session.status)
@@ -97,7 +95,7 @@ def stop_charging_session(
 ):
     db_charging_session = (
         db.query(ChargingSession)
-        .filter(ChargingSession.id == charging_session_id) # type: ignore
+        .filter(ChargingSession.id == charging_session_id)  # type: ignore
         .first()
     )
     # status = "completed" if charging_session.status == "completed" else "stopped"

@@ -12,12 +12,14 @@ class ChargingSession(BaseModel):
     endTime: datetime.datetime
     status: str
 
+
 class createChargingSession(BaseModel):
     userId: str
     stationId: str
     powerUsed: float
     startTime: datetime.datetime
     status: str = "active"
+
 
 class updateChargingSession(BaseModel):
     powerUsed: Optional[float]

@@ -11,16 +11,20 @@ class ChargingBooth(BaseModel):
     created_at: datetime.datetime
     updated_at: datetime.datetime
 
+
 class createChargingBooth(BaseModel):
     booth_name: str
+
 
 class updateChargingBooth(BaseModel):
     booth_name: str
     station_id: str
     updated_at: datetime.datetime
 
+
 class updateChargingBoothStatus(BaseModel):
     status: str
+
 
 class updateChargingBoothRate(BaseModel):
     charging_rate: float

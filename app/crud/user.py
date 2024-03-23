@@ -102,7 +102,7 @@ def update_user_by_super_admin(db: Session, user_id: str, user: updateUserBySupe
     return db_user
 
 
-def update_user_balance(db: Session,user_id: str, amount: float):
+def update_user_balance(db: Session, user_id: str, amount: float):
     db_user = db.query(User).filter(User.id == user_id).first()  # type: ignore
     if db_user is not None:
         try:
@@ -148,10 +148,9 @@ def check_password_current_user(db: Session, user_id: str, password: str):
     if db_user is not None:
         try:
             if not security.verify_password(password, db_user.hashed_password):
-                return None    
+                return None
             return True
         except Exception as e:
             print(e)
             return None
     return db_user
-    

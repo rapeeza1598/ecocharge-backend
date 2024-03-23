@@ -13,6 +13,7 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
+
 @router.get("/")
 async def read_station_admins(
     station_id: str,
@@ -25,6 +26,7 @@ async def read_station_admins(
         return station.get_station_admins(db, station_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail="Station Admins not found") from e
+
 
 @router.post("/{station_id}/admins/{user_id}")
 async def create_station_admin(
@@ -39,7 +41,8 @@ async def create_station_admin(
         return {"message": "Station Admin added successfully"}
     else:
         raise HTTPException(status_code=400, detail="Station Admin not added")
-    
+
+
 @router.delete("/{station_id}/admins/{user_id}")
 async def delete_station_admin_by_superadmin(
     station_id: str,
