@@ -21,7 +21,7 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-@router.put("/{user_id}/topup")
+@router.put("/{user_id}")
 async def topup_user_balance(
     user_id: str,
     amount: float,
