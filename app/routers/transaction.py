@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.core.security import get_current_user
 from app.crud.transaction import get_transaction_by_user_id, get_transactions
+from app.crud.user import get_user_by_id
 from app.database import get_db
-from app.schemas.transaction import Transaction
+from app.schemas.transaction import Transaction, responseTransaction
 from app.schemas.user import User
 
 
@@ -14,7 +15,7 @@ router = APIRouter(
 )
 
 
-@router.get("/", response_model=list[Transaction])
+@router.get("/", response_model=list[responseTransaction])
 async def read_transactions(
     skip: int = 0,
     limit: int = 10,
@@ -23,10 +24,17 @@ async def read_transactions(
 ):
     if current_user.role not in ["superadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    return get_transactions(db, skip=skip, limit=limit)
+    transactions = get_transactions(db, skip=skip, limit=limit)
+    # map user to transaction
+    for transaction in transactions:
+        users = get_user_by_id(db, str(transaction.userId))
+        if users is not None:
+            transaction.firstName = users.firstName
+            transaction.lastName = users.lastName
+            transaction.email = users.email
+    return transactions
 
-
-@router.get("/{user_id}", response_model=list[Transaction])
+@router.get("/{user_id}", response_model=list[responseTransaction])
 async def read_transactions_by_user_id(
     user_id: str,
     skip: int = 0,
@@ -36,4 +44,12 @@ async def read_transactions_by_user_id(
 ):
     if current_user.role not in ["superadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    return get_transaction_by_user_id(db, user_id)
+    users = get_user_by_id(db, user_id)
+    transactions = get_transaction_by_user_id(db, user_id)
+    # map user to transaction
+    for transaction in transactions:
+        if users is not None:
+            transaction.firstName = users.firstName
+            transaction.lastName = users.lastName
+            transaction.email = users.email
+    return transactions

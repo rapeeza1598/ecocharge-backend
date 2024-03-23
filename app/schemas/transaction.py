@@ -17,3 +17,15 @@ class createTransaction(BaseModel):
     amount: float
     transactionType: str
     description: str
+
+class responseTransaction(BaseModel):
+    id: UUID
+    userId: str
+    firstName: str
+    lastName: str
+    email: str
+    amount: float
+    transactionType: str
+    description: str
+    created_at: datetime.datetime
+    id: UUID
