@@ -1,3 +1,4 @@
+from decimal import Decimal
 from sqlalchemy.orm import Session
 from app.models.users import User
 from app.schemas.user import (
@@ -105,13 +106,14 @@ def update_user_balance(db: Session,user_id: str, amount: float):
     db_user = db.query(User).filter(User.id == user_id).first()  # type: ignore
     if db_user is not None:
         try:
-            setattr(db_user, "balance", db_user.balance + amount)
+            updated_balance = db_user.balance + Decimal(amount)
+            setattr(db_user, "balance", updated_balance)
             db.commit()
             db.refresh(db_user)
+            return db_user
         except Exception as e:
             print(e)
             return None
-    return db_user
 
 
 def disable_user(db: Session, user_id: str):
@@ -134,6 +136,7 @@ def update_user_password(db: Session, user_id: str, password: str):
             setattr(db_user, "hashed_password", security.password_hash(password))
             db.commit()
             db.refresh(db_user)
+            return db_user
         except Exception as e:
             print(e)
             return None
