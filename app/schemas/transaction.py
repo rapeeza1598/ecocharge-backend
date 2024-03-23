@@ -9,6 +9,7 @@ class Transaction(BaseModel):
     amount: float
     transactionType: str
     description: str
+    created_at: datetime.datetime
 
 class createTransaction(BaseModel):
     userId: str
