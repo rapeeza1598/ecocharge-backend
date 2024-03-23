@@ -28,4 +28,3 @@ class responseTransaction(BaseModel):
     transactionType: str
     description: str
     created_at: datetime.datetime
-    id: UUID

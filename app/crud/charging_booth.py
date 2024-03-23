@@ -4,7 +4,10 @@ from app.models.charging_booths import ChargingBooth
 
 def add_charging_booth(db: Session, booth_name: str, station_id: str):
     try:
-        new_booth = ChargingBooth(booth_name=booth_name, station_id=station_id)
+        new_booth = ChargingBooth(
+            booth_name=booth_name,
+            station_id=station_id
+        )
         db.add(new_booth)
         db.commit()
         db.refresh(new_booth)

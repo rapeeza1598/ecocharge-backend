@@ -120,13 +120,12 @@ def disable_user(db: Session, user_id: str):
     db_user = db.query(User).filter(User.id == user_id).first()  # type: ignore
     if db_user is not None:
         try:
-            db.query(User).filter(User.id == user_id).update({User.is_active: False})  # type: ignore
+            setattr(db_user, "is_active", False)
             db.commit()
             db.refresh(db_user)
         except Exception as e:
             print(e)
             return None
-    return db_user
 
 
 def update_user_password(db: Session, user_id: str, password: str):
@@ -140,7 +139,6 @@ def update_user_password(db: Session, user_id: str, password: str):
         except Exception as e:
             print(e)
             return None
-    return db_user
 
 
 def check_password_current_user(db: Session, user_id: str, password: str):
@@ -153,4 +151,3 @@ def check_password_current_user(db: Session, user_id: str, password: str):
         except Exception as e:
             print(e)
             return None
-    return db_user

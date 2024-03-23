@@ -6,16 +6,12 @@ from pydantic import BaseModel
 class ChargingSession(BaseModel):
     id: str
     userId: str
-    stationId: str
-    powerUsed: float
-    startTime: datetime.datetime
-    endTime: datetime.datetime
-    status: str
+    booth_id: str
 
 
 class createChargingSession(BaseModel):
     userId: str
-    stationId: str
+    booth_id: str
     powerUsed: float
     startTime: datetime.datetime
     status: str = "active"

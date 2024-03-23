@@ -1,3 +1,4 @@
+import datetime
 from sqlalchemy.orm import Session
 
 from app.models.charging_sessions import ChargingSession
@@ -5,7 +6,10 @@ from app.schemas.charging_session import createChargingSession, updateChargingSe
 
 
 def create_charging_session(db: Session, charging_session: createChargingSession):
-    db_charging_session = ChargingSession(**charging_session.dict())
+    db_charging_session = ChargingSession(
+        userId=charging_session.userId,
+        booth_id=charging_session.booth_id,
+    )
     try:
         db.add(db_charging_session)
         db.commit()

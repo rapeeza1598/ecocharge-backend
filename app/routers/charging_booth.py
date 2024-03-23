@@ -31,7 +31,7 @@ async def read_charging_booth_in_station(
     return charging_booth.get_charging_booth_by_station_id(db, station_id)
 
 
-@router.post("/charging_booth")
+@router.post("/{station_id}")
 async def create_charging_booth(
     station_id: str,
     create_charging_booth: createChargingBooth,
