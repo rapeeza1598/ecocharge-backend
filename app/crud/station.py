@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from app.models.charging_booths import ChargingBooth
 from app.models.charging_sessions import ChargingSession
 from app.models.station_admins import StationAdmin
 from app.models.stations import Station
@@ -25,6 +26,8 @@ def get_stations(db: Session, skip: int = 0, limit: int = 10):
 def get_station_by_id(db: Session, station_id: str):
     return db.query(Station).filter(Station.id == station_id).first()  # type: ignore
 
+def get_station_booths_status(db: Session, station_id: str):
+    return db.query(ChargingBooth).filter(ChargingBooth.station_id == station_id).all() # type: ignore
 
 def update_station(db: Session, station_id: str, station: updateStation):
     db_station: Station | None = db.query(Station).filter(Station.id == station_id).first()  # type: ignore
