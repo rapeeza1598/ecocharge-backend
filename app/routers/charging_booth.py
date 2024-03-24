@@ -1,5 +1,6 @@
+from enum import Enum
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
 from app.core.security import get_current_user
@@ -15,9 +16,25 @@ router = APIRouter(
 )
 
 
+class ChargerStatus(Enum):
+    ONLINE = "online"
+    OFFLINE = "offline"
+    CHARGING = "charging"
+
+
+status = {"station": ChargerStatus.OFFLINE.value}
+connections: dict = {}
+
+
 @router.get("/")
-async def read_charging_booths():
-    return {"message": "Read charging booths"}
+async def read_charging_booths(
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+):
+    if current_user.role not in ["superadmin", "stationadmin"]:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+    if not charging_booth.get_all_charging_booths(db):
+        raise HTTPException(status_code=404, detail="Charging Booths not found")
+    return charging_booth.get_all_charging_booths(db)
 
 
 @router.get("/{station_id}", response_model=List[ChargingBooth])
@@ -106,3 +123,17 @@ async def delete_charging_booth(
         return {"message": "Charging Booth deleted successfully"}
     else:
         raise HTTPException(status_code=400, detail="Charging Booth not deleted")
+
+
+@router.websocket("/ws/{booth_id}")
+async def websocket_endpoint(websocket: WebSocket, booth_id: str):
+    await websocket.accept()
+    try:
+        while True:
+            data = await websocket.receive_text()
+            status["station"] = data
+            await websocket.send_text(f"Message text was: {data}")
+    except WebSocketDisconnect:
+        status["station"] = ChargerStatus.OFFLINE.value
+        print("station is offline")
+        await websocket.close()
