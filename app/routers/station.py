@@ -1,12 +1,10 @@
-from typing import List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 
 from app.crud.charging_session import get_charging_session_by_station_id
 from app.crud import station
 from app.database import get_db
 from app.schemas.station import Station, createStation, updateStation
-from app.schemas.station_admin import StationAdmin
 from app.schemas.user import User
 from app.core.security import get_current_user
 
@@ -129,3 +127,17 @@ async def read_station_admins(
         return station.get_station_admins(db, station_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail="Station Admins not found") from e
+
+@router.get("/{station_id}/booths/status")
+async def get_station_booths_status(
+    station_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        if current_user.role not in ["superadmin", "stationadmin"]:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        return station.get_station_booths_status(db, station_id)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail="Station Booths status not found") from e
+    

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <title>EV Charging Station Simulator</title>
+        <link rel="stylesheet" href="/static/css/style.css" />
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
+    </head>
+    <body>
+        <div id="chargingStation">
+            <div id="stationInfo">
+                <h2>
+                    Booth ID:
+                    <span id="stationId"
+                        >df859aad-20db-4454-82fb-9f121c3fc73b</span
+                    >
+                </h2>
+                <canvas id="qrCode"></canvas>
+            </div>
+            <div id="chargingStatus">
+                <h2>Charging Sessions Id: <span id="sessionId"></span></h2>
+                <h2>Charging Status: <span id="statusMessage">Idle</span></h2>
+                <h2>Energy Rate : <span id="energy-rate"> 0 Watt/sec</span></h2>
+                <h2>User Money Amount : <span id="user-money"> 0 Bath</span></h2>
+                <h2>Charging Time: <span id="time">00:00</span> seconds</h2>
+                <div id="energy-consumed">
+                    Energy Consumed: <span id="energy-value">0 kWh</span>
+                </div>
+                <div>
+                    Money Amount: <span id="money-value">0 Bath</span>
+                </div>
+            </div>
+            <button id="startButton" onclick="startCharging()">
+                Start Charging
+            </button>
+            <button id="stopButton" onclick="stopCharging()">
+                Stop Charging
+            </button>
+        </div>
+
+        <script src="/static/js/script.js"></script>
+    </body>
+</html>

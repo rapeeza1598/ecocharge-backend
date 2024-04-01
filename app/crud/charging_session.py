@@ -2,7 +2,7 @@ import datetime
 from sqlalchemy.orm import Session
 
 from app.models.charging_sessions import ChargingSession
-from app.schemas.charging_session import createChargingSession, updateChargingSession
+from app.schemas.charging_session import createChargingSession, stopChargingSession, updateChargingSession
 
 
 def create_charging_session(db: Session, charging_session: createChargingSession):
@@ -48,26 +48,39 @@ def get_charging_session_by_station_id(db: Session, station_id: str):
     )
 
 
+def get_charging_session_by_booth_id(db: Session, booth_id: str):
+    return (
+        db.query(ChargingSession)
+        .filter(ChargingSession.booth_id == booth_id)  # type: ignore
+        .all()
+    )
+
+
 def update_charging_session(
     db: Session,
     charging_session_id: str,
-    charging_session: updateChargingSession,
+    lastPower: float,
 ):
     db_charging_session = (
         db.query(ChargingSession)
-        .filter(ChargingSession.id == charging_session_id)  # type: ignore
+        .filter(ChargingSession.id == charging_session_id) # type: ignore
         .first()
     )
-    setattr(db_charging_session, "status", charging_session.status)
-    setattr(db_charging_session, "endTime", charging_session.endTime)
-    setattr(db_charging_session, "powerUsed", charging_session.powerUsed)
+
+    # Check if db_charging_session is None
+    if db_charging_session is None:
+        print(f"No charging session found with ID {charging_session_id}")
+        return None
+
     try:
+        setattr(db_charging_session, "powerUsed", lastPower)
         db.commit()
         db.refresh(db_charging_session)
     except Exception as e:
         print(e)
         return None
     return db_charging_session
+
 
 
 def update_charging_session_by_station_id(
@@ -80,8 +93,6 @@ def update_charging_session_by_station_id(
         .filter(ChargingSession.id == charging_session_id)  # type: ignore
         .first()
     )
-    setattr(db_charging_session, "status", charging_session.status)
-    setattr(db_charging_session, "endTime", charging_session.endTime)
     setattr(db_charging_session, "powerUsed", charging_session.powerUsed)
     try:
         db.commit()
@@ -95,17 +106,19 @@ def update_charging_session_by_station_id(
 def stop_charging_session(
     db: Session,
     charging_session_id: str,
-    charging_session: updateChargingSession,
+    charging_session: stopChargingSession,
 ):
     db_charging_session = (
         db.query(ChargingSession)
         .filter(ChargingSession.id == charging_session_id)  # type: ignore
         .first()
     )
+    if db_charging_session is None:
+        print(f"No charging session found with ID {charging_session_id}")
+        return None
     # status = "completed" if charging_session.status == "completed" else "stopped"
     setattr(db_charging_session, "status", "completed")
-    setattr(db_charging_session, "endTime", charging_session.endTime)
-    setattr(db_charging_session, "powerUsed", charging_session.powerUsed)
+    setattr(db_charging_session, "endTime", datetime.datetime.now())
     try:
         db.commit()
         db.refresh(db_charging_session)

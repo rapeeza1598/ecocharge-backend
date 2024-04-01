@@ -1,4 +1,5 @@
 from enum import Enum
+import json
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
@@ -125,15 +126,31 @@ async def delete_charging_booth(
         raise HTTPException(status_code=400, detail="Charging Booth not deleted")
 
 
-@router.websocket("/ws/{booth_id}")
-async def websocket_endpoint(websocket: WebSocket, booth_id: str):
+@router.websocket("/ws/{booth_id}/")
+async def websocket_endpoint(
+    websocket: WebSocket, booth_id: str, db: Session = Depends(get_db)
+):
     await websocket.accept()
     try:
+        charging_booth.update_charging_booth_status(
+            db, booth_id, ChargerStatus.ONLINE.value
+        )
         while True:
             data = await websocket.receive_text()
-            status["station"] = data
+            data_dict = json.loads(data)
+            # print(data_dict)
+            if data_dict["status"] == "charging":
+                status["station"] = ChargerStatus.CHARGING.value
+                charging_booth.update_charging_booth_rate(
+                    db, booth_id, data_dict["rate"]
+                )
+            else:
+                status["station"] = ChargerStatus.ONLINE.value
+                charging_booth.update_charging_booth_rate(db, booth_id, 0.0)
+            charging_booth.update_charging_booth_status(db, booth_id, status["station"])
             await websocket.send_text(f"Message text was: {data}")
     except WebSocketDisconnect:
         status["station"] = ChargerStatus.OFFLINE.value
         print("station is offline")
-        await websocket.close()
+        charging_booth.update_charging_booth_status(db, booth_id, status["station"])
+        # await websocket.close()

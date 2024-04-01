@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordRequestForm
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from app.core import security
 from app.crud.user import create_user, get_user_by_email
@@ -58,10 +60,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+app.mount("/static", StaticFiles(directory="static", html=True), name="static")
 
 @app.get("/")
 def read_root():
-    return {"msg": "Hello World"}
+    # return {"msg": "Hello World"}
+    return FileResponse('./static/index.html')
+
 
 
 @app.get("/db")
