@@ -31,8 +31,8 @@ connections: dict = {}
 async def read_charging_booths(
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
-    if current_user.role not in ["superadmin", "stationadmin"]:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+    # if current_user.role not in ["superadmin", "stationadmin"]:
+    #     raise HTTPException(status_code=401, detail="Unauthorized")
     if not charging_booth.get_all_charging_booths(db):
         raise HTTPException(status_code=404, detail="Charging Booths not found")
     return charging_booth.get_all_charging_booths(db)
@@ -44,8 +44,8 @@ async def read_charging_booth_in_station(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role not in ["superadmin", "stationadmin"]:
-        raise HTTPException(status_code=401, detail="Unauthorized")
+    # if current_user.role not in ["superadmin", "stationadmin"]:
+    #     raise HTTPException(status_code=401, detail="Unauthorized")
     return charging_booth.get_charging_booth_by_station_id(db, station_id)
 
 
