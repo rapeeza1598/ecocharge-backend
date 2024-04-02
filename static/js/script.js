@@ -19,7 +19,7 @@ let chargingCost = 0
 
 // Connect to MQTT Broker
 function connectToBroker() {
-    client = new Paho.MQTT.Client("broker.hivemq.com", 433, stationId) // Change to your MQTT broker details
+    client = new Paho.MQTT.Client("broker.hivemq.com", 8000, stationId) // Change to your MQTT broker details
     client.onConnectionLost = onConnectionLost
     client.onMessageArrived = onMessageArrived
     client.connect({ onSuccess: onConnect })
@@ -74,10 +74,10 @@ let qr = new QRious({
 
 // Connect to WebSocket
 let socket = new WebSocket(
-    "wss://ecocharge.azurewebsites.net/charging_sessions/ws/" + stationId + "/"
+    "ws://127.0.0.1:8000/charging_sessions/ws/" + stationId + "/"
 )
 let boothStatus = new WebSocket(
-    "wss://ecocharge.azurewebsites.net/charging_booth/ws/" + stationId + "/"
+    "ws://127.0.0.1:8000/charging_booth/ws/" + stationId + "/"
 )
 
 socket.onopen = function () {
