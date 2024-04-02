@@ -38,6 +38,17 @@ async def read_charging_booths(
     return charging_booth.get_all_charging_booths(db)
 
 
+@router.get("/{booth_id}")
+async def read_charging_booth_by_id(
+    booth_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if not charging_booth.get_charging_booth_by_id(db, booth_id):
+        raise HTTPException(status_code=404, detail="Charging Booth not found")
+    return charging_booth.get_charging_booth_by_id(db, booth_id)
+
+
 @router.get("/{station_id}", response_model=List[ChargingBooth])
 async def read_charging_booth_in_station(
     station_id: str,
