@@ -74,10 +74,10 @@ let qr = new QRious({
 
 // Connect to WebSocket
 let socket = new WebSocket(
-    "ws://127.0.0.1:8000/charging_sessions/ws/" + stationId + "/"
+    "ws://ecocharge.azurewebsites.net/charging_sessions/ws/" + stationId + "/"
 )
 let boothStatus = new WebSocket(
-    "ws://127.0.0.1:8000/charging_booth/ws/" + stationId + "/"
+    "ws://ecocharge.azurewebsites.net/charging_booth/ws/" + stationId + "/"
 )
 
 socket.onopen = function () {
