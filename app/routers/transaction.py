@@ -22,12 +22,12 @@ async def read_transactions(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role not in ["superadmin"]:
-        raise HTTPException(status_code=401, detail="Unauthorized")
-    transactions = get_transactions(db, skip=skip, limit=limit)
+    # if current_user.role not in ["superadmin"]:
+    #     raise HTTPException(status_code=401, detail="Unauthorized")
+    users = get_user_by_id(db, str(current_user.id))
+    transactions = get_transaction_by_user_id(db, str(current_user.id))
     # map user to transaction
     for transaction in transactions:
-        users = get_user_by_id(db, str(transaction.userId))
         if users is not None:
             transaction.firstName = users.firstName
             transaction.lastName = users.lastName
@@ -42,8 +42,8 @@ async def read_transactions_by_user_id(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # if current_user.role not in ["superadmin"]:
-    #     raise HTTPException(status_code=401, detail="Unauthorized")
+    if current_user.role not in ["superadmin"]:
+        raise HTTPException(status_code=401, detail="Unauthorized")
     users = get_user_by_id(db, user_id)
     transactions = get_transaction_by_user_id(db, user_id)
     # map user to transaction
