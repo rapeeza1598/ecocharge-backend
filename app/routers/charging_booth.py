@@ -49,7 +49,7 @@ async def read_charging_booth_by_id(
     return charging_booth.get_charging_booth_by_id(db, booth_id)
 
 
-@router.get("/{station_id}", response_model=List[ChargingBooth])
+@router.get("/station/{station_id}", response_model=List[ChargingBooth])
 async def read_charging_booth_in_station(
     station_id: str,
     db: Session = Depends(get_db),
