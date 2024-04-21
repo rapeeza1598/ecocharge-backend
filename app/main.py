@@ -14,6 +14,7 @@ from app.models import (
     stations,
     transactions,
     users,
+    topups,
 )
 from app.schemas.user import createUser
 from app.routers import (
@@ -35,6 +36,7 @@ models = [
     charging_sessions.ChargingSession,
     charging_booths.ChargingBooth,
     station_admins.StationAdmin,
+    topups.Topups,
 ]
 Base.metadata.create_all(bind=engine, tables=[model.__table__ for model in models])
 
