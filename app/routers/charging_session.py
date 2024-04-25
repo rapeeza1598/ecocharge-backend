@@ -12,7 +12,6 @@ from app.database import get_db
 from app.schemas.charging_session import (
     createChargingSession,
     stopChargingSession,
-    updateChargingSession,
 )
 from app.schemas.user import User
 from app.core.security import get_current_user
@@ -132,7 +131,7 @@ async def websocket_endpoint(
                 charging_session.stop_charging_session(
                     db, data_dict["sessionsId"], endChargingSession
                 )
-            # send data to other clients
+            # send data to all connected clients
             for session_id, session in sessions.items():
                 await session.send_text(data)
     except WebSocketDisconnect:

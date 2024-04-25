@@ -5,7 +5,7 @@ from app.models.users import User
 from app.schemas.topup import TopupCreate
 
 
-def create_topup(db: Session,userId:str, topup: TopupCreate):
+def create_topup(db: Session, userId: str, topup: TopupCreate):
     db_topup = Topups(
         userId=userId,
         image_base64=topup.image_base64,
@@ -20,31 +20,48 @@ def create_topup(db: Session,userId:str, topup: TopupCreate):
 def get_topups(
     db: Session, skip: int = 0, limit: int = 10, status_approved: bool = False
 ):
-    return (
+    topup = (
         db.query(Topups)
         .filter(Topups.status_approved == status_approved)
         .offset(skip)
         .limit(limit)
         .all()
     )
+    users = db.query(User).all()
+    for t in topup:
+        for user in users:
+            if t.userId == user.id:  # type: ignore
+                t.firstName = user.firstName
+                t.lastName = user.lastName
+                t.email = user.email
+    # remove image_base64 from response
+    for t in topup:
+        delattr(t, "image_base64")
+    return topup
 
 
 def get_topup_by_user_id(db: Session, user_id: str):
     return db.query(Topups).filter(Topups.userId == user_id).all()  # type: ignore
 
+
 def get_topup_by_id(db: Session, topup_id: str):
     return db.query(Topups).filter(Topups.id == topup_id).first()  # type: ignore
 
+
 def approve_topup(db: Session, topup_id: str):
     db_topup: Topups | None = db.query(Topups).filter(Topups.id == topup_id).first()  # type: ignore
-    db_user = db.query(User).filter(User.id == db_topup.userId).first() # type: ignore
-    if db_user is not None and db_topup is not None and db_topup.status_approved is False:
+    db_user = db.query(User).filter(User.id == db_topup.userId).first()  # type: ignore
+    if (
+        db_user is not None
+        and db_topup is not None
+        and db_topup.status_approved is False
+    ):
         try:
             if db_topup.status_approved is True:
                 return None
             setattr(db_topup, "status_approved", True)
             db.commit()
-            updated_balance = db_user.balance + Decimal(db_topup.amount) # type: ignore
+            updated_balance = db_user.balance + Decimal(db_topup.amount)  # type: ignore
             setattr(db_user, "balance", updated_balance)
             db.commit()
             db.refresh(db_topup)

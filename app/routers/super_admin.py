@@ -51,12 +51,12 @@ async def register_user_by_super_admin(
 async def read_users(
     skip: int = 0,
     limit: int = 10,
-    is_active: bool = None,  # type: ignore
+    is_active: bool = True,
     db: Session = Depends(get_db),
     current_user: User = Depends(
         get_current_user,
     ),
-):  # type: ignore
+):
     if current_user.role not in ["superadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
     return get_users(db, skip=skip, limit=limit, is_active=is_active)

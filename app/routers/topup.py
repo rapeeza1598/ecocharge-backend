@@ -7,7 +7,7 @@ from app.crud.topup import approve_topup, get_topup_by_id, get_topups
 from app.crud.transaction import create_transaction
 from app.crud.user import get_user_by_id, update_user_balance
 from app.database import get_db
-from app.schemas.topup import TopupImage
+from app.schemas.topup import TopupImage, TopupResponse
 from app.schemas.user import User
 from decimal import Decimal
 from enum import Enum

@@ -7,3 +7,13 @@ class TopupCreate(BaseModel):
 
 class TopupImage(BaseModel):
     image: str
+
+class TopupResponse(BaseModel):
+    id: str
+    userId: str
+    amount: float
+    status_approved: bool
+    created_at: str
+    firstName: str
+    lastName: str
+    email: str
