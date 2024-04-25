@@ -50,7 +50,7 @@ origins = [
     "http://localhost:8000",
     "https://example.com",
     "https://staging.example.com",
-    "ev-dashboard-ten.vercel.app",
+    "https://ev-dashboard-ten.vercel.app",
     "*",
 ]
 
