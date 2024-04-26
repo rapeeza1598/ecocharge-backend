@@ -32,7 +32,7 @@ router = APIRouter(
 async def read_topups(
     skip: int = 0,
     limit: int = 10,
-    status_approved: bool = False,
+    status_approved: bool = None, # type: ignore
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):

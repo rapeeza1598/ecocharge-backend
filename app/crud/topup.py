@@ -18,15 +18,18 @@ def create_topup(db: Session, userId: str, topup: TopupCreate):
 
 
 def get_topups(
-    db: Session, skip: int = 0, limit: int = 10, status_approved: bool = False
+    db: Session, skip: int = 0, limit: int = 10, status_approved: bool = None  # type: ignore
 ):
-    topup = (
-        db.query(Topups)
-        .filter(Topups.status_approved == status_approved)
-        .offset(skip)
-        .limit(limit)
-        .all()
-    )
+    if status_approved is not None:
+        topup = (
+            db.query(Topups)
+            .filter(Topups.status_approved == status_approved)
+            .offset(skip)
+            .limit(limit)
+            .all()
+        )
+    else:
+        topup = db.query(Topups).offset(skip).limit(limit).all()
     users = db.query(User).all()
     for t in topup:
         for user in users:
