@@ -149,10 +149,12 @@ async def get_topup_image_by_id(
     topup_id: str,
     db: Session = Depends(get_db),
 ):
-    if topup := get_topup_by_id(db, topup_id):
-        decoded_image = (topup.image_base64).split(",", 1)
-        image = BytesIO(base64.b64decode(decoded_image[1]))
-        image_bytes = image.getvalue()
-        return Response(content=image_bytes, media_type="image/png")
-    else:
-        raise HTTPException(status_code=404, detail="Topup not found")
+    try:
+        topup = get_topup_by_id(db, topup_id)
+        if not topup:
+            raise HTTPException(status_code=404, detail="Topup not found")
+        image = base64.b64decode(str(topup.image_base64))
+        return Response(content=image, media_type="image/png")
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=400, detail="Invalid image base64") from e
