@@ -19,3 +19,4 @@ class Topups(Base):
         self.userId = userId
         self.image_base64 = image_base64
         self.amount = amount
+        self.created_at = datetime.datetime.now()
