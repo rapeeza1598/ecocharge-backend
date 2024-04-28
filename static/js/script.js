@@ -74,10 +74,10 @@ let qr = new QRious({
 
 // Connect to WebSocket
 let socket = new WebSocket(
-    "ws://127.0.0.1:8000/charging_sessions/ws/" + stationId + "/"
+    "wss://ecocharge.azurewebsites.net/charging_sessions/ws/" + stationId + "/"
 )
 let boothStatus = new WebSocket(
-    "ws://127.0.0.1:8000/charging_booth/ws/" + stationId + "/"
+    "wss://ecocharge.azurewebsites.net/charging_booth/ws/" + stationId + "/"
 )
 
 socket.onopen = function () {
@@ -118,13 +118,13 @@ function startCharging() {
             seconds < 10 ? "0" + seconds : seconds
         }`
         energyRate = Math.random() * 0.1
-        elementEnergy.textContent = `${energyRate.toFixed(2)} Watt/sec`
+        elementEnergy.textContent = `${energyRate.toFixed(2)} Unit`
         // if (energyConsumed < 0) {
         //     stopCharging()
         //     return
         // }
         energyConsumed += energyRate
-        energyValue.textContent = `${energyConsumed.toFixed(2)} kWh`
+        energyValue.textContent = `${energyConsumed.toFixed(2)}`
 
         chargingCost = energyConsumed * 7.5
         chargingCost = chargingCost.toFixed(2)
@@ -150,7 +150,7 @@ function startCharging() {
             stopCharging()
             return
         }
-    }, 1000)
+    }, 2000)
     // Send start charging message to server
 }
 

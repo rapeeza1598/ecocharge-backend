@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class Transaction(BaseModel):
-    id: UUID
+    id: str
     userId: str
     amount: float
     transactionType: str
@@ -19,7 +19,7 @@ class createTransaction(BaseModel):
     description: str
 
 class responseTransaction(BaseModel):
-    id: UUID
+    id: str
     userId: str
     firstName: str
     lastName: str

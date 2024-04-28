@@ -1,17 +1,19 @@
 import base64
 from decimal import Decimal
+import os
 from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from app.core.security import get_current_user
-from app.crud.topup import approve_topup, get_topup_by_id, get_topups
+from app.crud.topup import approve_topup, create_topup, get_topup_by_id, get_topups
 from app.crud.transaction import create_transaction
 from app.crud.user import get_user_by_id, update_user_balance
 from app.database import get_db
-from app.schemas.topup import TopupImage, TopupResponse
+from app.schemas.topup import TopupCreate, TopupImage, TopupResponse
 from app.schemas.user import User
 from decimal import Decimal
 from enum import Enum
 from io import BytesIO
+import httpx
 
 
 class TopupType(str, Enum):
@@ -19,6 +21,7 @@ class TopupType(str, Enum):
     mastercard = "mastercard"
     visa = "visa"
     paypal = "paypal"
+    promptpay = "promptpay"
 
 
 router = APIRouter(
@@ -28,11 +31,24 @@ router = APIRouter(
 )
 
 
+async def verify_image(image_base64):
+    url = "https://developer.easyslip.com/api/v1/verify"
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {os.getenv('EasySlip_API_KEY')}",
+    }
+    data = {"image": image_base64}
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(url, headers=headers, json=data)
+        return response.status_code == 200
+
+
 @router.get("/")
 async def read_topups(
     skip: int = 0,
     limit: int = 10,
-    status_approved: bool = None, # type: ignore
+    status_approved: bool = None,  # type: ignore
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -44,6 +60,35 @@ async def read_topups(
         return topups
     else:
         raise HTTPException(status_code=404, detail="Topups not found")
+
+
+@router.post("/")
+async def topup_user(
+    topup_data: TopupCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        if topup_data.amount < 0:
+            raise HTTPException(
+                status_code=400, detail="Amount should be greater than 0"
+            )
+        # check size of image limit to 4MB
+        if len(topup_data.image_base64) > 4 * 1024 * 1024:
+            raise HTTPException(
+                status_code=400, detail="Image size should be less than 4MB"
+            )
+        base64.b64decode(topup_data.image_base64)
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=400, detail="Invalid image base64") from e
+    if topup := create_topup(db, str(current_user.id), topup_data):
+        # if await verify_image(topup_data.image_base64):
+        #     approve_topup(db, str(topup.id))
+        #     update_user_balance(db, str(current_user.id), topup_data.amount)
+        return {"message": "topup successfully waiting for approval"}
+    else:
+        raise HTTPException(status_code=400, detail="topup not created")
 
 
 @router.put("/{user_id}")
@@ -83,14 +128,22 @@ async def approve_topup_by_sueradmin(
     user = get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    if is_approved and not approve_topup(db, topup_id):
+    my_approve_topup = approve_topup(db, topup_id)
+    if is_approved and not my_approve_topup:
         raise HTTPException(status_code=400, detail="Transaction not approved")
+    create_transaction(
+        db,
+        user_id,
+        float(my_approve_topup.amount),  # type: ignore
+        "promptpay",
+        "Topup approved",
+    )
     return {"message": "Transaction approved successfully"}
 
 
 @router.get("/get_image/{topup_id}")
 async def get_topup_image_by_id(
-    topup_id:str,
+    topup_id: str,
     db: Session = Depends(get_db),
 ):
     if topup := get_topup_by_id(db, topup_id):

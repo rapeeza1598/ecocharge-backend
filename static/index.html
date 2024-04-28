@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
-    <head>
         <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
         <title>EV Charging Station Simulator</title>
         <link rel="stylesheet" href="/static/css/style.css" />
         <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
@@ -10,6 +10,7 @@
     <body>
         <div id="chargingStation">
             <div id="stationInfo">
+                <h1>Booth Name: kmutnb</h1>
                 <h2>
                     Booth ID:
                     <span id="stationId"
@@ -20,12 +21,12 @@
             </div>
             <div id="chargingStatus">
                 <h2>Charging Sessions Id: <span id="sessionId"></span></h2>
-                <h2>Charging Status: <span id="statusMessage">Idle</span></h2>
-                <h2>Energy Rate : <span id="energy-rate"> 0 Watt/sec</span></h2>
+                <h2>Charging Status: <span id="statusMessage">Ready</span></h2>
+                <h2>Energy Rate : <span id="energy-rate"> 0 Watt</span></h2>
                 <h2>User Money Amount : <span id="user-money"> 0 Bath</span></h2>
                 <h2>Charging Time: <span id="time">00:00</span> seconds</h2>
                 <div id="energy-consumed">
-                    Energy Consumed: <span id="energy-value">0 kWh</span>
+                    Power: <span id="energy-value">0</span>
                 </div>
                 <div>
                     Money Amount: <span id="money-value">0 Bath</span>
