@@ -128,6 +128,9 @@ async def approve_topup_by_sueradmin(
     user = get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    my_topup = get_topup_by_id(db, topup_id)
+    if my_topup.status_approved: # type: ignore
+        raise HTTPException(status_code=400, detail="Topup already approved")
     my_approve_topup = approve_topup(db, topup_id)
     if is_approved and not my_approve_topup:
         raise HTTPException(status_code=400, detail="Transaction not approved")
