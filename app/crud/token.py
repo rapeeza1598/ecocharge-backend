@@ -34,6 +34,7 @@ def update_token_by_email(db: Session, token: str, email: str):
     setattr(db_token, "token", token)
     try:
         db.commit()
+        db.refresh(db_token)
     except Exception as e:
         print(e)
         return None
