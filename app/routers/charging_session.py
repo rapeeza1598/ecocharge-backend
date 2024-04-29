@@ -3,6 +3,7 @@ import json
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from app.crud.charging_booth import (
+    get_all_charging_booths,
     get_charging_booth_by_id,
     get_charging_booths_by_station_id,
 )
@@ -36,7 +37,15 @@ async def get_user_charging_sessions(
 ):
     if not charging_session.get_charging_session_by_user_id(db, user_id):
         raise HTTPException(status_code=404, detail="Charging Session not found")
-    return charging_session.get_charging_session_by_user_id(db, user_id)
+    my_session = charging_session.get_charging_session_by_user_id(db, user_id)
+    if not my_session:
+        raise HTTPException(status_code=404, detail="Charging Session not found")
+    # map session to booth name
+    for session in my_session:
+        if booth := get_charging_booth_by_id(db, str(session.booth_id)):
+            session.booth_name = booth.booth_name
+    return my_session
+    
 
 
 @router.get("/station/{station_id}")
