@@ -20,16 +20,15 @@ router = APIRouter(
 )
 
 
-@router.get("/{user_id}")
+@router.get("/")
 async def get_user_avatar_image(
-    user_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        if (user_avatar := get_user_by_id(db, user_id)) is None:
+        if (user_avatar := get_user_by_id(db, str(current_user.id))) is None:
             raise HTTPException(status_code=404, detail="User not found")
-        avatar = get_user_avatar(db, user_id)
+        avatar = get_user_avatar(db, str(current_user.id))
         if avatar is None:
             raise HTTPException(status_code=404, detail="Image not found")
         image = base64.b64decode(str(avatar.avatar))
@@ -39,14 +38,15 @@ async def get_user_avatar_image(
         raise HTTPException(status_code=404, detail="Image not found") from e
 
 
-@router.post("/{user_id}")
+@router.post("/")
 async def post_user_avatar_image(
     user_avatar: UploadUserAvatar,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        if get_user_by_id(db, user_avatar.user_id) is None:
+        user_avatar.user_id = str(current_user.id)
+        if get_user_by_id(db, str(current_user.id)) is None:
             raise HTTPException(status_code=404, detail="User not found")
         if len(user_avatar.avatar_img_b64) > 4 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="Image size too large")
@@ -60,19 +60,19 @@ async def post_user_avatar_image(
         raise HTTPException(status_code=400, detail="Image not uploaded") from e
 
 
-@router.put("/{user_id}")
+@router.put("/")
 async def put_user_avatar_image(
     user_avatar: UploadUserAvatar,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        if get_user_by_id(db, user_avatar.user_id) is None:
+        if get_user_by_id(db, str(current_user.id)) is None:
             raise HTTPException(status_code=404, detail="User not found")
         if len(user_avatar.avatar_img_b64) > 4 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="Image size too large")
         base64.b64decode(user_avatar.avatar_img_b64)
-        if update_user_avatar(db, user_avatar.user_id, user_avatar.avatar_img_b64):
+        if update_user_avatar(db, str(current_user.id), user_avatar.avatar_img_b64):
             return {"message": "Image updated"}
         else:
             raise HTTPException(status_code=400, detail="Image not updated")
@@ -81,16 +81,15 @@ async def put_user_avatar_image(
         raise HTTPException(status_code=400, detail="Image not updated") from e
 
 
-@router.delete("/{user_id}")
+@router.delete("/")
 async def delete_user_avatar_image(
-    user_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     try:
-        if get_user_by_id(db, user_id) is None:
+        if get_user_by_id(db, str(current_user.id)) is None:
             raise HTTPException(status_code=404, detail="User not found")
-        if delete_user_avatar(db, user_id):
+        if delete_user_avatar(db, str(current_user.id)):
             return {"message": "Image deleted"}
         else:
             raise HTTPException(status_code=400, detail="Image not deleted")
