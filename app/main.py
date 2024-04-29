@@ -19,6 +19,7 @@ from app.models import (
     users,
     topups,
     tokens,
+    user_avatars,
 )
 from app.schemas.token import setNewPassword
 from app.schemas.user import createUser
@@ -31,6 +32,7 @@ from app.routers import (
     charging_booth,
     station_admin,
     topup,
+    image,
 )
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -46,7 +48,7 @@ models = [
     station_admins.StationAdmin,
     topups.Topups,
     tokens.Token,
-
+    user_avatars.UserAvatar,
 ]
 Base.metadata.create_all(bind=engine, tables=[model.__table__ for model in models])
 
@@ -192,3 +194,4 @@ app.include_router(charging_booth.router)
 app.include_router(transaction.router)
 app.include_router(charging_session.router)
 app.include_router(topup.router)
+app.include_router(image.router)
