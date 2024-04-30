@@ -45,13 +45,12 @@ async def post_user_avatar_image(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        user_avatar.user_id = str(current_user.id)
         if get_user_by_id(db, str(current_user.id)) is None:
             raise HTTPException(status_code=404, detail="User not found")
         if len(user_avatar.avatar_img_b64) > 4 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="Image size too large")
         base64.b64decode(user_avatar.avatar_img_b64)
-        if create_user_avatar(db, user_avatar):
+        if create_user_avatar(db, str(current_user.id),user_avatar):
             return {"message": "Image uploaded"}
         else:
             raise HTTPException(status_code=400, detail="Image not uploaded")
