@@ -20,9 +20,10 @@ from app.models import (
     topups,
     tokens,
     user_avatars,
+    logs,
 )
 from app.schemas.token import setNewPassword
-from app.schemas.user import createUser
+from app.schemas.user import ResetPassword, createUser
 from app.routers import (
     user,
     super_admin,
@@ -33,6 +34,7 @@ from app.routers import (
     station_admin,
     topup,
     image,
+    log,
 )
 import smtplib
 from email.mime.multipart import MIMEMultipart
@@ -49,6 +51,7 @@ models = [
     topups.Topups,
     tokens.Token,
     user_avatars.UserAvatar,
+    logs.Logs,
 ]
 Base.metadata.create_all(bind=engine, tables=[model.__table__ for model in models])
 
@@ -149,16 +152,16 @@ async def register_user(user: createUser, db: Session = Depends(get_db)):
 
 
 @app.post("/reset_password/")
-async def reset_password(email: str, background_tasks: BackgroundTasks,db: Session = Depends(get_db)):
+async def reset_password(email: ResetPassword, background_tasks: BackgroundTasks,db: Session = Depends(get_db)):
     token = generate_token()
     print(f"Generated token: {token}")
-    if update_token_by_email(db, token, email):
+    if update_token_by_email(db, token, email.email):
         print("Token updated")
-        background_tasks.add_task(send_reset_email, email, token)
-    elif get_user_by_email(db, email):
-        create_token(db, token, email)
+        background_tasks.add_task(send_reset_email, email.email, token)
+    elif get_user_by_email(db, email.email):
+        create_token(db, token, email.email)
         print("Token created")
-        background_tasks.add_task(send_reset_email, email, token)
+        background_tasks.add_task(send_reset_email, email.email, token)
     return {"message": "Password reset email sent"}
 
 @app.get("/reset_password/{token}")
@@ -195,3 +198,4 @@ app.include_router(transaction.router)
 app.include_router(charging_session.router)
 app.include_router(topup.router)
 app.include_router(image.router)
+app.include_router(log.router)

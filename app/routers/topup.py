@@ -1,7 +1,7 @@
 import base64
 from decimal import Decimal
 import os
-from fastapi import APIRouter, Depends, HTTPException, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from app.core.security import get_current_user
 from app.crud.topup import approve_topup, create_topup, get_topup_by_id, get_topups
@@ -14,6 +14,7 @@ from decimal import Decimal
 from enum import Enum
 from io import BytesIO
 import httpx
+from app.crud.logs import create_log_info
 
 
 class TopupType(str, Enum):
@@ -141,6 +142,8 @@ async def approve_topup_by_sueradmin(
         "promptpay",
         "Topup approved",
     )
+    user_activity = f"User {current_user.email} approved topup {topup_id}"
+    create_log_info(db, str(current_user.id), user_activity)
     return {"message": "Transaction approved successfully"}
 
 

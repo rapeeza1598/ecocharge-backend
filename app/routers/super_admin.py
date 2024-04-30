@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.crud.station import delete_station, get_station_admins, get_station_by_id
 from app.crud.station_admin import add_admin_station, delete_admin_station
@@ -21,6 +21,7 @@ from app.schemas.user import (
     updateUserBySuperAdmin,
 )
 from app.core.security import get_current_user, password_hash
+from app.crud.logs import create_log_info
 
 
 router = APIRouter(
@@ -43,8 +44,12 @@ async def register_user_by_super_admin(
     if user.password != user.confirmPassword:
         raise HTTPException(status_code=400, detail="Passwords do not match")
     user.password = password_hash(user.password)
-    create_user_by_super_admin(db, user)
-    return {"message": "User registered successfully"}
+    if create_user_by_super_admin(db, user):
+        user_activity = f"User {current_user.email} registered user {user.email}"
+        create_log_info(db, str(current_user.id), user_activity)
+
+        return {"message": "User registered successfully"}
+    raise HTTPException(status_code=400, detail="User registration failed")
 
 
 @router.get("/users", response_model=List[User])
@@ -90,6 +95,8 @@ async def disable_user(
         raise HTTPException(status_code=404, detail="User not found")
     user.is_active = False  # type: ignore
     db.commit()
+    user_activity = f"User {current_user.email} disabled user {user_id}"
+    create_log_info(db, str(current_user.id), user_activity)
     return {"message": "User disabled successfully"}
 
 
@@ -109,4 +116,6 @@ async def update_user_password_by_superadmin(
         raise HTTPException(status_code=400, detail="Passwords do not match")
     user.hashed_password = password_hash(password.password)
     db.commit()
+    user_activity = f"User {current_user.email} updated password for user {user_id}"
+    create_log_info(db, str(current_user.id), message=user_activity)
     return {"message": "Password updated successfully"}

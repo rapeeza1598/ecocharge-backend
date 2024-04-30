@@ -1,8 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+import datetime
+import logging
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks
 from sqlalchemy.orm import Session
 
 from app.crud.charging_session import get_charging_session_by_station_id
 from app.crud import station
+from app.crud.logs import create_log_info
 from app.database import get_db
 from app.schemas.station import Station, createStation, updateStation
 from app.schemas.user import User
@@ -29,6 +32,8 @@ async def create_new_station(
     if current_user.role != "superadmin":
         raise HTTPException(status_code=401, detail="Unauthorized")
     if db_station := station.create_station(db, station_new):
+        user_activity = f"User {current_user.email} created station {station_new.name}"
+        create_log_info(db, str(current_user.id), user_activity)
         return db_station
     else:
         raise HTTPException(status_code=400, detail="Station not created")
@@ -41,6 +46,8 @@ async def read_station_by_id(
     current_user: User = Depends(get_current_user),
 ):
     if stations := station.get_station_by_id(db, station_id):
+        user_activity = f"User {current_user.email} read station {station_id}"
+        create_log_info(db, str(current_user.id), user_activity)
         return stations
     else:
         raise HTTPException(status_code=404, detail="Station not found")
@@ -56,6 +63,10 @@ async def update_station(
     if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
     if db_station := station.update_station(db, station_id, station_update):
+        user_activity = (
+            f"User {current_user.email} updated station {station_update.name}"
+        )
+        create_log_info(db, str(current_user.id), user_activity)
         return db_station
     else:
         raise HTTPException(status_code=400, detail="Station not updated")
@@ -73,6 +84,8 @@ async def delete_station_by_superadmin(
         if not station.get_station_by_id(db, station_id):
             raise HTTPException(status_code=404, detail="Station not found")
         station.delete_station(db, station_id)
+        user_activity = f"User {current_user.email} deleted station {station_id}"
+        create_log_info(db, str(current_user.id), user_activity)
         return {"message": "Station deleted successfully"}
     except Exception as e:
         print(e)
@@ -128,6 +141,7 @@ async def read_station_admins(
     except Exception as e:
         raise HTTPException(status_code=400, detail="Station Admins not found") from e
 
+
 @router.get("/{station_id}/booths/status")
 async def get_station_booths_status(
     station_id: str,
@@ -139,5 +153,6 @@ async def get_station_booths_status(
             raise HTTPException(status_code=401, detail="Unauthorized")
         return station.get_station_booths_status(db, station_id)
     except Exception as e:
-        raise HTTPException(status_code=400, detail="Station Booths status not found") from e
-    
+        raise HTTPException(
+            status_code=400, detail="Station Booths status not found"
+        ) from e

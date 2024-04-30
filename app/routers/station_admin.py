@@ -1,11 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException,BackgroundTasks
 from sqlalchemy.orm import Session
 from app.core.security import get_current_user
-from app.crud import station
+from app.crud import station,logs
 from app.crud.station_admin import add_admin_station, delete_admin_station
 from app.database import get_db
 from app.schemas.user import User
-
+from app.crud.logs import create_log_info
 
 router = APIRouter(
     prefix="/station_admin",
@@ -38,6 +38,10 @@ async def create_station_admin(
     if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
     if add_admin_station(db, station_id, user_id):
+        user_activity = (
+            f"User {current_user.email} added as station admin for station {station_id}"
+        )
+        create_log_info(db, str(current_user.id), user_activity)
         return {"message": "Station Admin added successfully"}
     else:
         raise HTTPException(status_code=400, detail="Station Admin not added")
@@ -53,6 +57,8 @@ async def delete_station_admin_by_superadmin(
     if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
     if delete_admin_station(db, station_id, user_id):
+        user_activity = f"User {current_user.email} deleted as station admin for station {station_id}"
+        create_log_info(db, str(current_user.id), user_activity)
         return {"message": "Station Admin deleted successfully"}
     else:
         raise HTTPException(status_code=400, detail="Station Admin not deleted")

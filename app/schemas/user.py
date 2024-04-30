@@ -69,3 +69,6 @@ class changePasswordBySuperAdmin(BaseModel):
 
 class TokenData(BaseModel):
     email: str | None = None
+
+class ResetPassword(BaseModel):
+    email: str
