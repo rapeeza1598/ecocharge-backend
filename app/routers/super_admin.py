@@ -47,7 +47,6 @@ async def register_user_by_super_admin(
     if create_user_by_super_admin(db, user):
         user_activity = f"User {current_user.email} registered user {user.email}"
         create_log_info(db, str(current_user.id), user_activity)
-
         return {"message": "User registered successfully"}
     raise HTTPException(status_code=400, detail="User registration failed")
 

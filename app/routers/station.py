@@ -66,7 +66,7 @@ async def update_station(
         user_activity = (
             f"User {current_user.email} updated station {station_update.name}"
         )
-        create_log_info(db, str(current_user.id), user_activity)
+        create_log_info(db, str(current_user.id), user_activity,station_id=station_id)
         return db_station
     else:
         raise HTTPException(status_code=400, detail="Station not updated")
@@ -85,7 +85,7 @@ async def delete_station_by_superadmin(
             raise HTTPException(status_code=404, detail="Station not found")
         station.delete_station(db, station_id)
         user_activity = f"User {current_user.email} deleted station {station_id}"
-        create_log_info(db, str(current_user.id), user_activity)
+        create_log_info(db, str(current_user.id), user_activity,station_id=station_id)
         return {"message": "Station deleted successfully"}
     except Exception as e:
         print(e)

@@ -9,6 +9,7 @@ from app.crud import charging_booth
 from app.database import get_db
 from app.schemas.charging_booth import ChargingBooth, createChargingBooth
 from app.schemas.user import User
+from app.crud.logs import create_log_info
 
 router = APIRouter(
     prefix="/charging_booth",
@@ -69,9 +70,11 @@ async def create_charging_booth(
 ):
     if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    if charging_booth.add_charging_booth(
+    if booth := charging_booth.add_charging_booth(
         db, create_charging_booth.booth_name, station_id
     ):
+        user_activity = f"User {current_user.email} added charging booth {create_charging_booth.booth_name} for station {station_id}"
+        create_log_info(db, str(current_user.id), user_activity,station_id=station_id,charging_booth_id=str(booth.booth_id))
         return {"message": "Charging Booth added successfully"}
     else:
         raise HTTPException(status_code=400, detail="Charging Booth not added")
@@ -118,6 +121,8 @@ async def update_charging_booth(
     if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
     if charging_booth.update_charging_booth(db, booth_id, booth_name, station_id):
+        user_activity = f"User {current_user.email} updated charging booth {booth_name} for station {station_id}"
+        create_log_info(db, str(current_user.id), user_activity,station_id=station_id,charging_booth_id=booth_id)
         return {"message": "Charging Booth updated successfully"}
     else:
         raise HTTPException(status_code=400, detail="Charging Booth not updated")
@@ -132,6 +137,8 @@ async def delete_charging_booth(
     if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
     if charging_booth.delete_charging_booth(db, booth_id):
+        user_activity = f"User {current_user.email} deleted charging booth {booth_id}"
+        create_log_info(db, str(current_user.id), user_activity,charging_booth_id=booth_id)
         return {"message": "Charging Booth deleted successfully"}
     else:
         raise HTTPException(status_code=400, detail="Charging Booth not deleted")
