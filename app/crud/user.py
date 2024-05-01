@@ -88,7 +88,7 @@ def update_user(db: Session, user_id: str, user: updateUser):
 
 def update_user_by_super_admin(db: Session, user_id: str, user: updateUserBySuperAdmin):
     db_user = db.query(User).filter(User.id == user_id).first()  # type: ignore
-    list_data = ["firstName", "lastName", "phoneNumber", "role", "is_active"]
+    list_data = ["firstName", "lastName", "phoneNumber","email", "role", "is_active"]
     try:
         for data in list_data:
             if hasattr(user, data):
