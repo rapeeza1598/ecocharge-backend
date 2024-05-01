@@ -50,34 +50,15 @@ async def post_user_avatar_image(
         if len(user_avatar.avatar_img_b64) > 4 * 1024 * 1024:
             raise HTTPException(status_code=400, detail="Image size too large")
         base64.b64decode(user_avatar.avatar_img_b64)
+        if get_user_avatar(db, str(current_user.id)):
+            update_user_avatar(db, str(current_user.id), user_avatar.avatar_img_b64)
+            return {"message": "Image updated"}
         if create_user_avatar(db, str(current_user.id),user_avatar):
             return {"message": "Image uploaded"}
-        else:
-            raise HTTPException(status_code=400, detail="Image not uploaded")
+        raise HTTPException(status_code=400, detail="Image already image updated")
     except Exception as e:
         print(e)
         raise HTTPException(status_code=400, detail="Image not uploaded") from e
-
-
-@router.put("/")
-async def put_user_avatar_image(
-    user_avatar: UploadUserAvatar,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    try:
-        if get_user_by_id(db, str(current_user.id)) is None:
-            raise HTTPException(status_code=404, detail="User not found")
-        if len(user_avatar.avatar_img_b64) > 4 * 1024 * 1024:
-            raise HTTPException(status_code=400, detail="Image size too large")
-        base64.b64decode(user_avatar.avatar_img_b64)
-        if update_user_avatar(db, str(current_user.id), user_avatar.avatar_img_b64):
-            return {"message": "Image updated"}
-        else:
-            raise HTTPException(status_code=400, detail="Image not updated")
-    except Exception as e:
-        print(e)
-        raise HTTPException(status_code=400, detail="Image not updated") from e
 
 
 @router.delete("/")

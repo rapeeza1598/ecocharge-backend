@@ -143,7 +143,7 @@ async def approve_topup_by_sueradmin(
         "Topup approved",
     )
     user_activity = f"User {current_user.email} approved topup {topup_id}"
-    create_log_info(db, str(current_user.id), user_activity)
+    create_log_info(db, str(current_user.id), user_activity, topup_id=topup_id, type_log="topup")
     return {"message": "Transaction approved successfully"}
 
 

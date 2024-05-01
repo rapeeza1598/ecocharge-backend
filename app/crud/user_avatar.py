@@ -23,7 +23,7 @@ def create_user_avatar(db: Session,user_id:str, user_avatar: UploadUserAvatar):
 def update_user_avatar(db: Session, user_id: str, avatar_img_b64: str):
     if (
         db_user_avatar := db.query(UserAvatar)
-        .filter(UserAvatar.user_id == user_id) # type: ignore
+        .filter(UserAvatar.userId == user_id) # type: ignore
         .first()
     ):
         setattr(db_user_avatar, "avatar_img_b64", avatar_img_b64)

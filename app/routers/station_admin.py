@@ -41,7 +41,7 @@ async def create_station_admin(
         user_activity = (
             f"User {current_user.email} added as station admin {user_id} for station {station_id}"
         )
-        create_log_info(db, str(current_user.id), user_activity,station_id=station_id)
+        create_log_info(db, str(current_user.id), user_activity,station_id=station_id,type_log="station")
         return {"message": "Station Admin added successfully"}
     else:
         raise HTTPException(status_code=400, detail="Station Admin not added")
@@ -58,7 +58,7 @@ async def delete_station_admin_by_superadmin(
         raise HTTPException(status_code=401, detail="Unauthorized")
     if delete_admin_station(db, station_id, user_id):
         user_activity = f"User {current_user.email} deleted as station admin {user_id} for station {station_id}"
-        create_log_info(db, str(current_user.id), user_activity,station_id=station_id)
+        create_log_info(db, str(current_user.id), user_activity,station_id=station_id,type_log="station")
         return {"message": "Station Admin deleted successfully"}
     else:
         raise HTTPException(status_code=400, detail="Station Admin not deleted")

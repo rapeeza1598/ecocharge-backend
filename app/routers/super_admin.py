@@ -46,7 +46,7 @@ async def register_user_by_super_admin(
     user.password = password_hash(user.password)
     if create_user_by_super_admin(db, user):
         user_activity = f"User {current_user.email} registered user {user.email}"
-        create_log_info(db, str(current_user.id), user_activity)
+        create_log_info(db, str(current_user.id), user_activity, type_log="user")
         return {"message": "User registered successfully"}
     raise HTTPException(status_code=400, detail="User registration failed")
 
@@ -55,7 +55,7 @@ async def register_user_by_super_admin(
 async def read_users(
     skip: int = 0,
     limit: int = 10,
-    is_active: bool = True,
+    is_active: bool = None, # type: ignore
     db: Session = Depends(get_db),
     current_user: User = Depends(
         get_current_user,
@@ -78,7 +78,11 @@ async def update_user_by_id(
 ):
     if current_user.role != "superadmin":
         raise HTTPException(status_code=401, detail="Unauthorized")
-    return update_user_by_super_admin(db, user_id, user)
+    if update_user_by_super_admin(db, user_id, user):
+        user_activity = f"User {current_user.email} updated user {user_id}"
+        create_log_info(db, str(current_user.id), user_activity, type_log="user")
+        return {"message": "User updated successfully"}
+    raise HTTPException(status_code=400, detail="User update failed")
 
 
 @router.put("/users/{user_id}/disable")
@@ -95,7 +99,7 @@ async def disable_user(
     user.is_active = False  # type: ignore
     db.commit()
     user_activity = f"User {current_user.email} disabled user {user_id}"
-    create_log_info(db, str(current_user.id), user_activity)
+    create_log_info(db, str(current_user.id), user_activity, type_log="user")
     return {"message": "User disabled successfully"}
 
 
@@ -116,5 +120,5 @@ async def update_user_password_by_superadmin(
     user.hashed_password = password_hash(password.password)
     db.commit()
     user_activity = f"User {current_user.email} updated password for user {user_id}"
-    create_log_info(db, str(current_user.id), message=user_activity)
+    create_log_info(db, str(current_user.id), message=user_activity, type_log="user")
     return {"message": "Password updated successfully"}
