@@ -26,7 +26,7 @@ def update_user_avatar(db: Session, user_id: str, avatar_img_b64: str):
         .filter(UserAvatar.userId == user_id) # type: ignore
         .first()
     ):
-        setattr(db_user_avatar, "avatar_img_b64", avatar_img_b64)
+        setattr(db_user_avatar, "avatar", avatar_img_b64)
         try:
             db.commit()
             db.refresh(db_user_avatar)

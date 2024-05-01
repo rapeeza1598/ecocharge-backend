@@ -51,7 +51,6 @@ class updateUserBySuperAdmin(BaseModel):
     firstName: Optional[str]
     lastName: Optional[str]
     phoneNumber: Optional[str]
-    email: Optional[str]
     role: Optional[str]
     is_active: Optional[bool]
 
