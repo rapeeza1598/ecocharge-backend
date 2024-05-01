@@ -20,15 +20,13 @@ router = APIRouter(
 )
 
 
-@router.get("/")
+@router.get("/{user_id}")
 async def get_user_avatar_image(
+    user_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
     try:
-        if (user_avatar := get_user_by_id(db, str(current_user.id))) is None:
-            raise HTTPException(status_code=404, detail="User not found")
-        avatar = get_user_avatar(db, str(current_user.id))
+        avatar = get_user_avatar(db, user_id)
         if avatar is None:
             raise HTTPException(status_code=404, detail="Image not found")
         image = base64.b64decode(str(avatar.avatar))
