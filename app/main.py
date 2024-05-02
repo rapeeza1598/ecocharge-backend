@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
+from pyotp import TOTP
 from sqlalchemy.orm import Session
 from app.core import security
 from app.crud.token import create_token, get_token, update_token_by_email
@@ -23,7 +24,7 @@ from app.models import (
     logs,
 )
 from app.schemas.token import setNewPassword
-from app.schemas.user import ResetPassword, createUser
+from app.schemas.user import EmailRequest, EmailRequest, createUser
 from app.routers import (
     user,
     super_admin,
@@ -55,7 +56,6 @@ models = [
 ]
 Base.metadata.create_all(bind=engine, tables=[model.__table__ for model in models])
 
-
 app = FastAPI()
 api_router = APIRouter()
 
@@ -83,39 +83,54 @@ app.mount("/static", StaticFiles(directory="static", html=True), name="static")
 def generate_token() -> str:
     return secrets.token_urlsafe(16)
 
+def generate_otp(email: str) -> str:
+    totp = TOTP(str(os.getenv("OTP_SECRET")))
+    return totp.now()
+
+def verify_otp(email: str, otp: str) -> bool:
+    totp = TOTP(str(os.getenv("OTP_SECRET")))
+    return totp.verify(otp)
+
+def send_email(email: str, subject: str, html_content: str):
+    smtp_user = str(os.getenv("SMTP_USER"))
+    smtp_password = str(os.getenv("APP_PASSWORD"))
+
+    with smtplib.SMTP("smtp.gmail.com", 587) as server:
+        server.starttls()
+        server.login(smtp_user, smtp_password)
+
+        msg = MIMEMultipart()
+        msg["From"] = smtp_user
+        msg["To"] = email
+        msg["Subject"] = subject
+
+        msg.attach(MIMEText(html_content, "html"))
+
+        server.send_message(msg)
 
 def send_reset_email(email: str, token: str):
-    # Load email template
     template_env = Environment(
         loader=FileSystemLoader("static/"),
         autoescape=select_autoescape(["html", "xml"]),
     )
 
     template = template_env.get_template("reset_email.html")
-
-    # Render email template with token
     html_content = template.render(token=token)
 
-    smtp_user = str(os.getenv("SMTP_USER"))
-    smtp_password = str(os.getenv("APP_PASSWORD"))
-
-    server = smtplib.SMTP("smtp.gmail.com", 587)
-    server.starttls()
-    server.login(smtp_user, smtp_password)
-
-    # Construct email
-    msg = MIMEMultipart()
-    msg["From"] = smtp_user
-    msg["To"] = email
-    msg["Subject"] = "Password Reset Request"
-
-    # Attach HTML content
-    msg.attach(MIMEText(html_content, "html"))
-
-    # Send email
-    server.send_message(msg)
-    server.quit()
+    send_email(email, "Password Reset Request", html_content)
     print(f"Sending reset email to {email} with token {token}")
+
+def send_otp_email(email: str, otp: str):
+    template_env = Environment(
+        loader=FileSystemLoader("static/"),
+        autoescape=select_autoescape(["html", "xml"]),
+    )
+
+    template = template_env.get_template("otp.html")
+    html_content = template.render(otp=otp)
+
+    send_email(email, "Verification Code", html_content)
+    print(f"Sending OTP email to {email} with code {otp}")
 
 
 @app.get("/")
@@ -152,7 +167,7 @@ async def register_user(user: createUser, db: Session = Depends(get_db)):
 
 
 @app.post("/reset_password/")
-async def reset_password(email: ResetPassword, background_tasks: BackgroundTasks,db: Session = Depends(get_db)):
+async def reset_password(email: EmailRequest, background_tasks: BackgroundTasks,db: Session = Depends(get_db)):
     token = generate_token()
     print(f"Generated token: {token}")
     if update_token_by_email(db, token, email.email):
@@ -187,6 +202,23 @@ async def set_new_password(setNewPassword: setNewPassword, db: Session = Depends
     db.delete(db_token)
     db.commit()
     return {"message": "Password reset successfully"}
+
+@app.post("/send-otp/")
+async def send_otp(email_request: EmailRequest, background_tasks: BackgroundTasks):
+    # Generate OTP
+    otp = generate_otp(email_request.email)
+
+    # Send OTP via email
+    background_tasks.add_task(send_otp_email, email_request.email, otp)
+    return {"message": "OTP sent successfully"}
+
+@app.post("/verify-otp/")
+async def verify_my_otp(email_request: EmailRequest, otp: str):
+    if is_valid := verify_otp(email_request.email, otp=otp):
+        return {"detail": "OTP is valid"}
+    else:
+        raise HTTPException(status_code=400, detail="Invalid OTP")
+
 
 
 app.include_router(user.router)
