@@ -1,7 +1,7 @@
-from fastapi import APIRouter, Depends, HTTPException,BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.core.security import get_current_user
-from app.crud import station,logs
+from app.crud import station, logs
 from app.crud.station_admin import add_admin_station, delete_admin_station
 from app.database import get_db
 from app.schemas.user import User
@@ -38,10 +38,14 @@ async def create_station_admin(
     if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
     if add_admin_station(db, station_id, user_id):
-        user_activity = (
-            f"User {current_user.email} added as station admin {user_id} for station {station_id}"
+        user_activity = f"User {current_user.email} added as station admin {user_id} for station {station_id}"
+        create_log_info(
+            db,
+            str(current_user.id),
+            user_activity,
+            station_id=station_id,
+            type_log="station",
         )
-        create_log_info(db, str(current_user.id), user_activity,station_id=station_id,type_log="station")
         return {"message": "Station Admin added successfully"}
     else:
         raise HTTPException(status_code=400, detail="Station Admin not added")
@@ -58,7 +62,13 @@ async def delete_station_admin_by_superadmin(
         raise HTTPException(status_code=401, detail="Unauthorized")
     if delete_admin_station(db, station_id, user_id):
         user_activity = f"User {current_user.email} deleted as station admin {user_id} for station {station_id}"
-        create_log_info(db, str(current_user.id), user_activity,station_id=station_id,type_log="station")
+        create_log_info(
+            db,
+            str(current_user.id),
+            user_activity,
+            type_log="station",
+            station_id=station_id,
+        )
         return {"message": "Station Admin deleted successfully"}
     else:
         raise HTTPException(status_code=400, detail="Station Admin not deleted")

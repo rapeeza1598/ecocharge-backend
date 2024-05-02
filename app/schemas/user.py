@@ -42,18 +42,18 @@ class createUserBySuperAdmin(BaseModel):
 
 
 class updateUser(BaseModel):
-    firstName: Optional[str]
-    lastName: Optional[str]
-    phoneNumber: Optional[str]
+    firstName: Optional[str] = None
+    lastName: Optional[str] = None
+    phoneNumber: Optional[str] = None
 
 
 class updateUserBySuperAdmin(BaseModel):
-    firstName: Optional[str]
-    lastName: Optional[str]
-    phoneNumber: Optional[str]
-    email: Optional[str]
-    role: Optional[str]
-    is_active: Optional[bool]
+    firstName: Optional[str] = None
+    lastName: Optional[str] = None
+    phoneNumber: Optional[str] = None
+    email: Optional[str] = None
+    role: Optional[str] = None
+    is_active: Optional[bool] = None
 
 
 class changePassword(BaseModel):

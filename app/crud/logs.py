@@ -30,7 +30,7 @@ def create_log_info(db: Session, user_id: str, message: str, type_log: str, stat
         return None
 
 
-def get_logs(db: Session, skip: int = 0, limit: int = 10):
+def get_logs(db: Session, skip: int, limit: int):
     try:
         return db.query(Logs).offset(skip).limit(limit).all()  # type: ignore
     except Exception as e:

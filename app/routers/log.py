@@ -21,11 +21,12 @@ router = APIRouter(
 
 @router.get("/")
 async def read_logs(
+    skip: int = 0, limit: int = 10,
     db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    if logs := get_logs(db):
+    if logs := get_logs(db=db, skip=skip, limit=limit):
         return logs
     raise HTTPException(status_code=400, detail="Logs not found")
 
