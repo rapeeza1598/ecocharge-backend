@@ -18,7 +18,7 @@ class User(BaseModel):
     phoneNumber: str
     role: str
     is_active: bool
-    is_superuser: bool
+    is_verify: bool
     created_at: datetime.datetime
 
 

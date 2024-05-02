@@ -15,8 +15,8 @@ class User(Base):
     phoneNumber = Column(String)
     hashed_password = Column(String)
     role = Column(String, default="user")
-    is_active = Column(Boolean, default=True)
-    is_superuser = Column(Boolean, default=False)
+    is_active = Column(Boolean, default=False)
+    is_verify = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.datetime.now())
 
     def __init__(self, firstName, lastName, email, phoneNumber, hashed_password, role):
