@@ -19,6 +19,8 @@ def create_user(db: Session, user: createUser):
         hashed_password=user.password,
         role="user",
     )
+    if db_user is None:
+        return None
     try:
         db.add(db_user)
         db.commit()

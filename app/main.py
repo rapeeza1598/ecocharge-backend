@@ -157,13 +157,19 @@ async def login_for_access_token(
 
 @app.post("/register")
 async def register_user(user: createUser, db: Session = Depends(get_db)):
-    if get_user_by_email(db, user.email):
-        raise HTTPException(status_code=400, detail="Email already registered")
-    if user.password != user.confirmPassword:
-        raise HTTPException(status_code=400, detail="Passwords do not match")
-    user.password = security.password_hash(user.password)
-    create_user(db, user)
-    return {"message": "User registered successfully"}
+    try:
+        if not user:
+            raise HTTPException(status_code=400, detail="User data is empty")
+        if get_user_by_email(db, user.email):
+            raise HTTPException(status_code=400, detail="Email already registered")
+        if user.password != user.confirmPassword:
+            raise HTTPException(status_code=400, detail="Passwords do not match")
+        user.password = security.password_hash(user.password)
+        create_user(db, user)
+        return {"message": "User registered successfully"}
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=400, detail="Error registering user") from e
 
 
 @app.post("/reset_password/")
