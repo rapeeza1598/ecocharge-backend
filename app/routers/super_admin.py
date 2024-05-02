@@ -81,10 +81,10 @@ async def update_user_by_id(
         user = get_user_by_id(db, user_id)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        if update_user_by_super_admin(db, user_id, user):
+        if update_user := update_user_by_super_admin(db, user_id, user):
             user_activity = f"User {current_user.email} updated user {user_id}"
             create_log_info(db, str(current_user.id), user_activity, type_log="user")
-            return {"message": "User updated successfully"}
+            return update_user
     except Exception as e:
         print(e)
         raise HTTPException(status_code=400, detail="User not updated") from e
