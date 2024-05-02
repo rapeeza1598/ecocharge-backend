@@ -9,7 +9,7 @@ from pyotp import TOTP
 from sqlalchemy.orm import Session
 from app.core import security
 from app.crud.token import create_token, get_token, update_token_by_email
-from app.crud.user import create_user, get_user_by_email
+from app.crud.user import create_user, get_user_by_email, verify_user_by_otp
 from app.database import Base, engine, get_db
 from app.models import (
     charging_booths,
@@ -24,7 +24,7 @@ from app.models import (
     logs,
 )
 from app.schemas.token import setNewPassword
-from app.schemas.user import EmailRequest, EmailRequest, createUser
+from app.schemas.user import EmailRequest, EmailRequest, OTPVerification, createUser
 from app.routers import (
     user,
     super_admin,
@@ -204,7 +204,7 @@ async def set_new_password(setNewPassword: setNewPassword, db: Session = Depends
     return {"message": "Password reset successfully"}
 
 @app.post("/send-otp/")
-async def send_otp(email_request: EmailRequest, background_tasks: BackgroundTasks):
+async def send_otp(email_request: EmailRequest, background_tasks: BackgroundTasks,db: Session = Depends(get_db)):
     # Generate OTP
     otp = generate_otp(email_request.email)
 
@@ -213,9 +213,12 @@ async def send_otp(email_request: EmailRequest, background_tasks: BackgroundTask
     return {"message": "OTP sent successfully"}
 
 @app.post("/verify-otp/")
-async def verify_my_otp(email_request: EmailRequest, otp: str):
-    if is_valid := verify_otp(email_request.email, otp=otp):
-        return {"detail": "OTP is valid"}
+async def verify_my_otp(otp_verification: OTPVerification,db: Session = Depends(get_db)):
+    if is_valid := verify_otp(otp_verification.email, otp_verification.otp):
+        if verify_user_by_otp(db,otp_verification.email):
+            return {"detail": "OTP is valid"}
+        else:
+            raise HTTPException(status_code=400, detail="Invalid OTP")
     else:
         raise HTTPException(status_code=400, detail="Invalid OTP")
 

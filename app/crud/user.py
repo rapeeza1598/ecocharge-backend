@@ -150,3 +150,19 @@ def check_password_current_user(db: Session, user_id: str, password: str):
         except Exception as e:
             print(e)
             return None
+
+def verify_user_by_otp(db: Session, email: str):
+    db_user = db.query(User).filter(User.email == email).first()  # type: ignore
+    if db_user is not None:
+        try:
+            userIsVerify = bool(db_user.is_verify)
+            if userIsVerify:
+                return None
+            setattr(db_user, "is_active", True)
+            setattr(db_user, "is_verify", True)
+            db.commit()
+            db.refresh(db_user)
+        except Exception as e:
+            print(e)
+            return None
+    return db_user

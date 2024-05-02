@@ -1,7 +1,7 @@
 import datetime
 from typing import Optional
 from uuid import UUID
-from pydantic import BaseModel
+from pydantic import BaseModel, EmailStr
 
 
 class Login(BaseModel):
@@ -71,4 +71,8 @@ class TokenData(BaseModel):
     email: str | None = None
 
 class EmailRequest(BaseModel):
-    email: str
+    email: EmailStr
+
+class OTPVerification(BaseModel):
+    email: EmailStr
+    otp: str
