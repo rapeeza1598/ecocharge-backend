@@ -22,7 +22,7 @@ def password_hash(password):
 
 
 def authenticate_user(db, email: str, password: str):
-    if user := get_user_by_email(db, email, is_active=True):
+    if user := get_user_by_email(db, email):
         return user if verify_password(password, user.hashed_password) else False
     else:
         return False

@@ -8,7 +8,12 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 from app.core import security
 from app.crud.token import create_token, get_token, update_token_by_email
-from app.crud.user import create_user, get_user_by_email, get_user_by_email_verify, verify_user_by_otp
+from app.crud.user import (
+    create_user,
+    get_user_by_email,
+    get_user_by_email_verify,
+    verify_user_by_otp,
+)
 from app.database import Base, engine, get_db
 from app.models import (
     charging_booths,
@@ -82,19 +87,22 @@ app.mount("/static", StaticFiles(directory="static", html=True), name="static")
 def generate_token() -> str:
     return secrets.token_urlsafe(16)
 
-def generate_otp(email: str) -> str:
-    return ''.join(secrets.choice("0123456789") for _ in range(6))
 
-def verify_otp(db: Session,email: str, otp: str):
-    db_token = db.query(tokens.Token).filter(tokens.Token.email == email).first() # type: ignore
+def generate_otp(email: str) -> str:
+    return "".join(secrets.choice("0123456789") for _ in range(6))
+
+
+def verify_otp(db: Session, email: str, otp: str):
+    db_token = db.query(tokens.Token).filter(tokens.Token.email == email).first()  # type: ignore
     try:
-        if db_token and (db_token.token is not None and db_token.token == otp): # type: ignore
+        if db_token and (db_token.token is not None and db_token.token == otp):  # type: ignore
             db.delete(db_token)
             db.commit()
             return True
     except Exception as e:
         print(e)
         return False
+
 
 def send_email(email: str, subject: str, html_content: str):
     smtp_user = str(os.getenv("SMTP_USER"))
@@ -113,6 +121,7 @@ def send_email(email: str, subject: str, html_content: str):
 
         server.send_message(msg)
 
+
 def send_reset_email(email: str, token: str):
     template_env = Environment(
         loader=FileSystemLoader("static/"),
@@ -124,6 +133,7 @@ def send_reset_email(email: str, token: str):
 
     send_email(email, "Password Reset Request", html_content)
     print(f"Sending reset email to {email} with token {token}")
+
 
 def send_otp_email(email: str, otp: str):
     template_env = Environment(
@@ -154,10 +164,17 @@ async def login_for_access_token(
     db: Session = Depends(get_db), form_data: OAuth2PasswordRequestForm = Depends()
 ):
     user = security.authenticate_user(db, form_data.username, form_data.password)
-    if user and security.verify_password(form_data.password, user.hashed_password):
-        token = security.create_access_token(data={"sub": user.email})
-        return {"access_token": token, "token_type": "bearer"}
-    raise HTTPException(status_code=400, detail="Incorrect email or password")
+    if not user:
+        raise HTTPException(status_code=400, detail="Incorrect email or password")
+
+    if not user.is_verify:  # type: ignore
+        raise HTTPException(status_code=400, detail="User not verified")
+
+    if not security.verify_password(form_data.password, user.hashed_password) or not user.is_active: # type: ignore
+        raise HTTPException(status_code=400, detail="Incorrect email or password")
+
+    token = security.create_access_token(data={"sub": user.email})
+    return {"access_token": token, "token_type": "bearer"}
 
 
 @app.post("/register")
@@ -178,17 +195,22 @@ async def register_user(user: createUser, db: Session = Depends(get_db)):
 
 
 @app.post("/reset_password/")
-async def reset_password(email: EmailRequest, background_tasks: BackgroundTasks,db: Session = Depends(get_db)):
+async def reset_password(
+    email: EmailRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     token = generate_token()
     print(f"Generated token: {token}")
     if update_token_by_email(db, token, email.email):
         print("Token updated")
         background_tasks.add_task(send_reset_email, email.email, token)
-    elif get_user_by_email(db, email.email):
+    elif get_user_by_email(db, email.email, is_active=True):
         create_token(db, token, email.email)
         print("Token created")
         background_tasks.add_task(send_reset_email, email.email, token)
     return {"message": "Password reset email sent"}
+
 
 @app.get("/reset_password/{token}")
 async def validate_token(token: str, db: Session = Depends(get_db)):
@@ -198,8 +220,11 @@ async def validate_token(token: str, db: Session = Depends(get_db)):
     else:
         return FileResponse("./static/404.html")
 
+
 @app.post("/set_password/")
-async def set_new_password(setNewPassword: setNewPassword, db: Session = Depends(get_db)):
+async def set_new_password(
+    setNewPassword: setNewPassword, db: Session = Depends(get_db)
+):
     token = setNewPassword.token
     new_password = setNewPassword.new_password
     if not new_password:
@@ -209,13 +234,18 @@ async def set_new_password(setNewPassword: setNewPassword, db: Session = Depends
         raise HTTPException(status_code=400, detail="Invalid token")
     email = db_token.email
     user = get_user_by_email(db, str(email))
-    user.hashed_password = security.password_hash(new_password) # type: ignore
+    user.hashed_password = security.password_hash(new_password)  # type: ignore
     db.delete(db_token)
     db.commit()
     return {"message": "Password reset successfully"}
 
+
 @app.post("/send-otp/")
-async def send_otp(email_request: EmailRequest, background_tasks: BackgroundTasks,db: Session = Depends(get_db)):
+async def send_otp(
+    email_request: EmailRequest,
+    background_tasks: BackgroundTasks,
+    db: Session = Depends(get_db),
+):
     # Generate OTP
     otp = generate_otp(email_request.email)
     if update_token_by_email(db, otp, email_request.email):
@@ -227,14 +257,16 @@ async def send_otp(email_request: EmailRequest, background_tasks: BackgroundTask
         background_tasks.add_task(send_otp_email, email_request.email, otp)
     return {"message": "OTP sent successfully"}
 
+
 @app.post("/verify-otp/")
-async def verify_my_otp(otp_verification: OTPVerification,db: Session = Depends(get_db)):
-    if is_valid := verify_otp(db,otp_verification.email, otp_verification.otp):
+async def verify_my_otp(
+    otp_verification: OTPVerification, db: Session = Depends(get_db)
+):
+    if is_valid := verify_otp(db, otp_verification.email, otp_verification.otp):
         verify_user_by_otp(db, otp_verification.email)
         return {"detail": "OTP is valid"}
     else:
         raise HTTPException(status_code=400, detail="Invalid OTP")
-
 
 
 app.include_router(user.router)

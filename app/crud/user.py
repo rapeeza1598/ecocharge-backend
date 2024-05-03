@@ -63,11 +63,11 @@ def get_users(db: Session, skip: int = 0, limit: int = 10, is_active: bool = Non
         )
 
 
-def get_user_by_email(db: Session, email: str, is_active: bool = None):  # type: ignore
+def get_user_by_email(db: Session, email: str, is_active: bool = None,is_verify:bool = None):  # type: ignore
     if is_active is None:
         return db.query(User).filter(User.email == email).first()  # type: ignore
     else:
-        return db.query(User).filter(User.email == email, User.is_active == is_active).first()  # type: ignore
+        return db.query(User).filter(User.email == email, User.is_active == is_active,User.is_verify== is_verify).first()  # type: ignore
 
 
 def get_user_by_id(db: Session, user_id: str):
