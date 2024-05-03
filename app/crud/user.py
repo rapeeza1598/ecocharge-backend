@@ -73,6 +73,9 @@ def get_user_by_email(db: Session, email: str, is_active: bool = None):  # type:
 def get_user_by_id(db: Session, user_id: str):
     return db.query(User).filter(User.id == user_id).first()  # type: ignore
 
+def get_user_by_email_verify(db: Session, email: str): 
+    return db.query(User).filter(User.email == email, User.is_verify == False).first()  # type: ignore
+
 
 def update_user(db: Session, user_id: str, user: updateUser):
     db_user = db.query(User).filter(User.id == user_id).first()  # type: ignore

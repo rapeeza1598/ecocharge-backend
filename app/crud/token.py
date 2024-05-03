@@ -12,6 +12,11 @@ def create_token(db: Session, token:str, email:str):
         return None
     return db_token
 
+def get_token_by_email(db: Session, email: str):
+    if myToken := db.query(Token).filter(Token.email == email).first(): # type: ignore
+        return myToken
+    return None
+
 def get_token(db: Session, token: str):
     if myToken := db.query(Token).filter(Token.token == token).first(): # type: ignore
         return myToken

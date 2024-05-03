@@ -5,11 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.staticfiles import StaticFiles
-from pyotp import TOTP
 from sqlalchemy.orm import Session
 from app.core import security
 from app.crud.token import create_token, get_token, update_token_by_email
-from app.crud.user import create_user, get_user_by_email, verify_user_by_otp
+from app.crud.user import create_user, get_user_by_email, get_user_by_email_verify, verify_user_by_otp
 from app.database import Base, engine, get_db
 from app.models import (
     charging_booths,
@@ -84,12 +83,18 @@ def generate_token() -> str:
     return secrets.token_urlsafe(16)
 
 def generate_otp(email: str) -> str:
-    totp = TOTP(str(os.getenv("OTP_SECRET")))
-    return totp.now()
+    return ''.join(secrets.choice("0123456789") for _ in range(6))
 
-def verify_otp(email: str, otp: str) -> bool:
-    totp = TOTP(str(os.getenv("OTP_SECRET")))
-    return totp.verify(otp)
+def verify_otp(db: Session,email: str, otp: str):
+    db_token = db.query(tokens.Token).filter(tokens.Token.email == email).first() # type: ignore
+    try:
+        if db_token and (db_token.token is not None and db_token.token == otp): # type: ignore
+            db.delete(db_token)
+            db.commit()
+            return True
+    except Exception as e:
+        print(e)
+        return False
 
 def send_email(email: str, subject: str, html_content: str):
     smtp_user = str(os.getenv("SMTP_USER"))
@@ -213,18 +218,19 @@ async def set_new_password(setNewPassword: setNewPassword, db: Session = Depends
 async def send_otp(email_request: EmailRequest, background_tasks: BackgroundTasks,db: Session = Depends(get_db)):
     # Generate OTP
     otp = generate_otp(email_request.email)
-
-    # Send OTP via email
-    background_tasks.add_task(send_otp_email, email_request.email, otp)
+    if update_token_by_email(db, otp, email_request.email):
+        print("OTP updated")
+        background_tasks.add_task(send_otp_email, email_request.email, otp)
+    if get_user_by_email_verify(db, email_request.email):
+        create_token(db, otp, email_request.email)
+        print("OTP created")
+        background_tasks.add_task(send_otp_email, email_request.email, otp)
     return {"message": "OTP sent successfully"}
 
 @app.post("/verify-otp/")
 async def verify_my_otp(otp_verification: OTPVerification,db: Session = Depends(get_db)):
-    if is_valid := verify_otp(otp_verification.email, otp_verification.otp):
-        if verify_user_by_otp(db,otp_verification.email):
-            return {"detail": "OTP is valid"}
-        else:
-            raise HTTPException(status_code=400, detail="Invalid OTP")
+    if is_valid := verify_otp(db,otp_verification.email, otp_verification.otp):
+        return {"detail": "OTP is valid"}
     else:
         raise HTTPException(status_code=400, detail="Invalid OTP")
 
