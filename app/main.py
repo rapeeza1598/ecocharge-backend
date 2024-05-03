@@ -230,6 +230,7 @@ async def send_otp(email_request: EmailRequest, background_tasks: BackgroundTask
 @app.post("/verify-otp/")
 async def verify_my_otp(otp_verification: OTPVerification,db: Session = Depends(get_db)):
     if is_valid := verify_otp(db,otp_verification.email, otp_verification.otp):
+        verify_user_by_otp(db, otp_verification.email)
         return {"detail": "OTP is valid"}
     else:
         raise HTTPException(status_code=400, detail="Invalid OTP")
