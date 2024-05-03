@@ -21,8 +21,10 @@ router = APIRouter(
 
 @router.get("/")
 async def read_logs(
-    skip: int = 0, limit: int = 10,
-    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
+    skip: int = 0,
+    limit: int = 10,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
@@ -76,7 +78,7 @@ async def delete_log(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role not in ["superadmin"]:
+    if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
     if delete_log_by_time(db, delete_time.start_date, delete_time.end_date):
         return {"message": "Logs deleted successfully"}

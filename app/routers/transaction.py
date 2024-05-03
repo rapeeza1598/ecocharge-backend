@@ -34,25 +34,27 @@ async def read_transactions(
             transaction.email = users.email
     return transactions
 
-@router.get("/all",response_model=list[responseTransaction])
+
+@router.get("/all", response_model=list[responseTransaction])
 async def read_transactions_all(
     skip: int = 0,
     limit: int = 10,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role not in ["superadmin"]:
+    if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
     transactions = get_transactions(db)
     user_all = get_users(db)
     # map user to transaction
     for transaction in transactions:
         for user in user_all:
-            if transaction.userId == user.id: # type: ignore
+            if transaction.userId == user.id:  # type: ignore
                 transaction.firstName = user.firstName
                 transaction.lastName = user.lastName
                 transaction.email = user.email
     return transactions
+
 
 @router.get("/{user_id}", response_model=list[responseTransaction])
 async def read_transactions_by_user_id(
@@ -62,7 +64,7 @@ async def read_transactions_by_user_id(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role not in ["superadmin"]:
+    if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
     users = get_user_by_id(db, user_id)
     transactions = get_transaction_by_user_id(db, user_id)

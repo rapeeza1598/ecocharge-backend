@@ -37,7 +37,7 @@ async def register_user_by_super_admin(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role not in ["superadmin"]:
+    if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
     if get_user_by_email(db, user.email):
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -55,20 +55,18 @@ async def register_user_by_super_admin(
 async def read_users(
     skip: int = 0,
     limit: int = 10,
-    is_active: bool = None, # type: ignore
+    is_active: bool = None,  # type: ignore
     db: Session = Depends(get_db),
     current_user: User = Depends(
         get_current_user,
     ),
 ):
-    if current_user.role not in ["superadmin"]:
+    if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
     return get_users(db, skip=skip, limit=limit, is_active=is_active)
 
 
-@router.put(
-    "/users/{user_id}",response_model=User
-)
+@router.put("/users/{user_id}", response_model=User)
 async def update_user_by_id(
     user_id: str,
     user: updateUserBySuperAdmin,
@@ -94,12 +92,12 @@ async def disable_user(
     current_user: User = Depends(get_current_user),
 ):
     try:
-        if current_user.role not in ["superadmin"]:
+        if current_user.role not in ["superadmin", "stationadmin"]:
             raise HTTPException(status_code=401, detail="Unauthorized")
         user = get_user_by_id(db, user_id)
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        user.is_active = False # type: ignore
+        user.is_active = False  # type: ignore
         db.commit()
         user_activity = f"User {current_user.email} disabled user {user_id}"
         create_log_info(db, str(current_user.id), user_activity, type_log="user")
@@ -116,7 +114,7 @@ async def update_user_password_by_superadmin(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role not in ["superadmin"]:
+    if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
     try:
         user = get_user_by_id(db, user_id)
@@ -127,7 +125,9 @@ async def update_user_password_by_superadmin(
         user.hashed_password = password_hash(password.password)
         db.commit()
         user_activity = f"User {current_user.email} updated password for user {user_id}"
-        create_log_info(db, str(current_user.id), message=user_activity, type_log="user")
+        create_log_info(
+            db, str(current_user.id), message=user_activity, type_log="user"
+        )
         return {"message": "Password updated successfully"}
     except Exception as e:
         print(e)

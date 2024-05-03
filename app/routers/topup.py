@@ -53,7 +53,7 @@ async def read_topups(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role not in ["superadmin"]:
+    if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
     if topups := get_topups(
         db, skip=skip, limit=limit, status_approved=status_approved
@@ -103,7 +103,7 @@ async def topup_user_balance_by_superadmin(
 ):
     if amount <= 0:
         raise HTTPException(status_code=400, detail="Amount should be greater than 0")
-    if current_user.role not in ["superadmin"]:
+    if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
     user = get_user_by_id(db, user_id)
     if not user:
@@ -124,13 +124,13 @@ async def approve_topup_by_sueradmin(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role not in ["superadmin"]:
+    if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
     user = get_user_by_id(db, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     my_topup = get_topup_by_id(db, topup_id)
-    if my_topup.status_approved: # type: ignore
+    if my_topup.status_approved:  # type: ignore
         raise HTTPException(status_code=400, detail="Topup already approved")
     my_approve_topup = approve_topup(db, topup_id)
     if is_approved and not my_approve_topup:
@@ -143,7 +143,9 @@ async def approve_topup_by_sueradmin(
         "Topup approved",
     )
     user_activity = f"User {current_user.email} approved topup {topup_id}"
-    create_log_info(db, str(current_user.id), user_activity, topup_id=topup_id, type_log="topup")
+    create_log_info(
+        db, str(current_user.id), user_activity, topup_id=topup_id, type_log="topup"
+    )
     return {"message": "Transaction approved successfully"}
 
 
