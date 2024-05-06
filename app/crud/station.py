@@ -59,7 +59,7 @@ def get_station_admins(db: Session, station_id: str):
 
 
 def get_station_admin_by_id(db: Session, station_admin_id: str):
-    return db.query(StationAdmin).filter(StationAdmin.id == station_admin_id).first()  # type: ignore
+    return db.query(StationAdmin).filter(StationAdmin.user_id == station_admin_id).first()  # type: ignore
 
 
 def delete_station(db: Session, station_id: str):

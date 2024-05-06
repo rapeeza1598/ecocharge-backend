@@ -1,11 +1,20 @@
 import datetime
 import logging
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect, BackgroundTasks
+from fastapi import (
+    APIRouter,
+    Depends,
+    HTTPException,
+    WebSocket,
+    WebSocketDisconnect,
+    BackgroundTasks,
+)
 from sqlalchemy.orm import Session
 
+from app.crud.charging_booth import get_charging_booth_by_station_id
 from app.crud.charging_session import get_charging_session_by_station_id
 from app.crud import station
 from app.crud.logs import create_log_info
+from app.crud.user import get_user_by_id, get_users
 from app.database import get_db
 from app.schemas.station import Station, createStation, updateStation
 from app.schemas.user import User
@@ -33,7 +42,13 @@ async def create_new_station(
         raise HTTPException(status_code=401, detail="Unauthorized")
     if db_station := station.create_station(db, station_new):
         user_activity = f"User {current_user.email} created station {station_new.name}"
-        create_log_info(db, str(current_user.id), user_activity,type_log="station",station_id=str(db_station.id))
+        create_log_info(
+            db,
+            str(current_user.id),
+            user_activity,
+            type_log="station",
+            station_id=str(db_station.id),
+        )
         return db_station
     else:
         raise HTTPException(status_code=400, detail="Station not created")
@@ -47,7 +62,13 @@ async def read_station_by_id(
 ):
     if stations := station.get_station_by_id(db, station_id):
         user_activity = f"User {current_user.email} read station {station_id}"
-        create_log_info(db, str(current_user.id), user_activity,station_id=station_id,type_log="station")
+        create_log_info(
+            db,
+            str(current_user.id),
+            user_activity,
+            station_id=station_id,
+            type_log="station",
+        )
         return stations
     else:
         raise HTTPException(status_code=404, detail="Station not found")
@@ -66,7 +87,13 @@ async def update_station(
         user_activity = (
             f"User {current_user.email} updated station {station_update.name}"
         )
-        create_log_info(db, str(current_user.id), user_activity,type_log="station",station_id=station_id)
+        create_log_info(
+            db,
+            str(current_user.id),
+            user_activity,
+            type_log="station",
+            station_id=station_id,
+        )
         return db_station
     else:
         raise HTTPException(status_code=400, detail="Station not updated")
@@ -85,7 +112,13 @@ async def delete_station_by_superadmin(
             raise HTTPException(status_code=404, detail="Station not found")
         station.delete_station(db, station_id)
         user_activity = f"User {current_user.email} deleted station {station_id}"
-        create_log_info(db, str(current_user.id), user_activity,type_log="station",station_id=station_id)
+        create_log_info(
+            db,
+            str(current_user.id),
+            user_activity,
+            type_log="station",
+            station_id=station_id,
+        )
         return {"message": "Station deleted successfully"}
     except Exception as e:
         print(e)
@@ -156,3 +189,24 @@ async def get_station_booths_status(
         raise HTTPException(
             status_code=400, detail="Station Booths status not found"
         ) from e
+
+
+@router.get("/provider/")
+async def read_stations_by_current_user(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    try:
+        if current_user.role not in ["superadmin", "stationadmin"]:
+            raise HTTPException(status_code=401, detail="Unauthorized")
+        if my_station := station.get_station_admin_by_id(
+            db, str(current_user.id)
+        ):
+            station_charging_booth = get_charging_booth_by_station_id(db,str(my_station.stationId))
+            my_station.charging_booth = station_charging_booth
+            return my_station
+        else:
+            raise HTTPException(status_code=400,detail="Station Admin not found in the system")
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=400, detail="Station Admin not found") from e
