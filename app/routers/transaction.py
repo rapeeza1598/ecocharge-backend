@@ -44,16 +44,20 @@ async def read_transactions_all(
 ):
     if current_user.role not in ["superadmin", "stationadmin"]:
         raise HTTPException(status_code=401, detail="Unauthorized")
-    transactions = get_transactions(db)
-    user_all = get_users(db)
-    # map user to transaction
-    for transaction in transactions:
-        for user in user_all:
-            if transaction.userId == user.id: # type: ignore
-                transaction.firstName = user.firstName
-                transaction.lastName = user.lastName
-                transaction.email = user.email
-    return transactions
+    try:
+        transactions = get_transactions(db)
+        user_all = get_users(db)
+        # map user to transaction
+        for transaction in transactions:
+            for user in user_all:
+                if transaction.userId == user.id: # type: ignore
+                    transaction.firstName = user.firstName
+                    transaction.lastName = user.lastName
+                    transaction.email = user.email
+        return transactions
+    except Exception as e:
+        print(e)
+        raise HTTPException(status_code=400, detail="Error fetching transactions") from e
 
 
 @router.get("/{user_id}", response_model=list[responseTransaction])
