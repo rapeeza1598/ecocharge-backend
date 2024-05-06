@@ -205,7 +205,7 @@ async def reset_password(
     if update_token_by_email(db, token, email.email):
         print("Token updated")
         background_tasks.add_task(send_reset_email, email.email, token)
-    elif get_user_by_email(db, email.email, is_active=True):
+    elif get_user_by_email(db, email.email):
         create_token(db, token, email.email)
         print("Token created")
         background_tasks.add_task(send_reset_email, email.email, token)
