@@ -191,17 +191,16 @@ async def get_station_booths_status(
         ) from e
 
 
-@router.get("/provider/")
+@router.get("/provider/{user_id}")
 async def read_stations_by_current_user(
+    user_id: str,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
     try:
         if current_user.role not in ["superadmin", "stationadmin"]:
             raise HTTPException(status_code=401, detail="Unauthorized")
-        if my_station := station.get_station_admin_by_id(
-            db, str(current_user.id)
-        ):
+        if my_station := station.get_station_admin_by_id(db, user_id):
             station_charging_booth = get_charging_booth_by_station_id(db,str(my_station.stationId))
             my_station.charging_booth = station_charging_booth
             return my_station
