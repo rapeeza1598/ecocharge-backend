@@ -50,7 +50,9 @@ def create_user_by_super_admin(db: Session, user: createUserBySuperAdmin):
     return db_user
 
 
-def get_users(db: Session, skip: int = 0, limit: int = 10, is_active: bool = None):  # type: ignore
+def get_users(db: Session, skip: int = None, limit: int = None, is_active: bool = None):  # type: ignore
+    if limit is None and skip is None and is_active is None:
+        return db.query(User).all()
     if is_active is None:
         return db.query(User).offset(skip).limit(limit).all()
     else:

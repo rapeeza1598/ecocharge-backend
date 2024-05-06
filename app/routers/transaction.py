@@ -49,7 +49,7 @@ async def read_transactions_all(
     # map user to transaction
     for transaction in transactions:
         for user in user_all:
-            if transaction.userId == user.id:  # type: ignore
+            if transaction.userId == user.id: # type: ignore
                 transaction.firstName = user.firstName
                 transaction.lastName = user.lastName
                 transaction.email = user.email
