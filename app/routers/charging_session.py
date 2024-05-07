@@ -74,12 +74,12 @@ async def create_charging_session(
     user = get_user_by_id(db, str(current_user.id))
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-    station = get_charging_booth_by_id(db, new_charging_session.booth_id)
+    station = get_charging_booth_by_id(db, new_charging_session.boothId)
     if not station:
         raise HTTPException(status_code=404, detail="Station not found")
     if user.balance <= 0:  # type: ignore
         raise HTTPException(status_code=400, detail="Insufficient balance")
-    if db_charging_session := charging_session.create_charging_session(db, new_charging_session):  # type: ignore
+    if db_charging_session := charging_session.create_charging_session(db, new_charging_session,str(current_user.id)):
         print(sessions)
         return db_charging_session
 
@@ -87,16 +87,15 @@ async def create_charging_session(
 @router.post("/{charging_session_id}")
 async def stop_charging_session(
     charging_session_id: str,
-    stopCharging_session: stopChargingSession,
     db: Session = Depends(get_db),
 ):
     if not charging_session.stop_charging_session(
-        db, charging_session_id, stopCharging_session
+        db, charging_session_id,
     ):
         raise HTTPException(status_code=400, detail="Charging session not stopped")
     if session := sessions.pop(charging_session_id, None):
         return {"message": "Charging stopped", "session_data": session}
-    return {"message": "Charging stopped not found"}
+    return {"message": "Charging stopped"}
 
 
 @router.put("/{charging_session_id}")
@@ -138,7 +137,7 @@ async def websocket_endpoint(
                 endChargingSession.endTime = datetime.datetime.now()
                 endChargingSession.status = "completed"
                 charging_session.stop_charging_session(
-                    db, data_dict["sessionsId"], endChargingSession
+                    db, data_dict["sessionsId"]
                 )
             # send data to all connected clients
             for session_id, session in sessions.items():

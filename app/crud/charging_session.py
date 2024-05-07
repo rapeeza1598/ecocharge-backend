@@ -5,10 +5,10 @@ from app.models.charging_sessions import ChargingSession
 from app.schemas.charging_session import createChargingSession, stopChargingSession, updateChargingSession
 
 
-def create_charging_session(db: Session, charging_session: createChargingSession):
+def create_charging_session(db: Session, charging_session: createChargingSession, userId: str):
     db_charging_session = ChargingSession(
-        userId=charging_session.userId,
-        booth_id=charging_session.booth_id,
+        userId=userId,
+        booth_id=charging_session.boothId,
     )
     try:
         db.add(db_charging_session)
@@ -106,7 +106,6 @@ def update_charging_session_by_station_id(
 def stop_charging_session(
     db: Session,
     charging_session_id: str,
-    charging_session: stopChargingSession,
 ):
     db_charging_session = (
         db.query(ChargingSession)

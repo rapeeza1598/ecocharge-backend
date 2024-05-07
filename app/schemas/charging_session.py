@@ -6,12 +6,11 @@ from pydantic import BaseModel
 class ChargingSession(BaseModel):
     id: str
     userId: str
-    booth_id: str
+    boothId: str
 
 
 class createChargingSession(BaseModel):
-    userId: str
-    booth_id: str
+    boothId: str
 
 
 class updateChargingSession(BaseModel):
